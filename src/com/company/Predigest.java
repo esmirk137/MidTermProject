@@ -10,7 +10,6 @@ import java.awt.event.*;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Objects;
 
 /**
  * This class represent graphic of my project, predigest.
@@ -19,17 +18,18 @@ public class Predigest {
     private JFrame frame;
     private JButton plusButtonOfFirstPanel;
     private ArrayList<Request> requests;
+    private int selectedRequestIndex;
+    private boolean stateOfFirstPanel;
+    private Color themeColor;
     private Panel secondPanel;
     private Panel thirdPanel;
     private HashMap<Integer,ArrayList<Panel>> panelNeedToSave;
-    private HashMap<Integer,ArrayList<Panel>> someNotImportantPanel;
+    private ArrayList<Panel> someNotImportantPanel;
     private ArrayList<Panel> secondPanelsOfRequestList;
-    private ArrayList<Panel> panelsOfHeaderInSecondPanel;
+    private HashMap<Integer,ArrayList<Panel>> panelsOfHeaderInSecondPanel;
     private ArrayList<Panel> thirdPanelsOfRequestList;
     private ArrayList<Label> labelsOfHeaderInThirdPanel;
     private DefaultListModel demoList;
-    private boolean dark;
-
 
     /**
      * This is constructor of this class and allocate fields and make main frame.
@@ -39,12 +39,16 @@ public class Predigest {
      * @throws IllegalAccessException thrown when an application tries to reflectively create an instance (other than an array), set or get a field, or invoke a method, but the currently executing method does not have access to the definition of the specified class, field, method or constructor.
      */
     public Predigest() throws ClassNotFoundException, UnsupportedLookAndFeelException, InstantiationException, IllegalAccessException {
+        selectedRequestIndex=0;
+        stateOfFirstPanel=true;
+        themeColor=new Color(255,255,255);
         requests=new ArrayList<>();
+        panelNeedToSave=new HashMap<>();
+        someNotImportantPanel=new ArrayList<>();
         secondPanelsOfRequestList=new ArrayList<>();
         thirdPanelsOfRequestList=new ArrayList<>();
-        panelsOfHeaderInSecondPanel=new ArrayList<>();
+        panelsOfHeaderInSecondPanel=new HashMap<>();
         labelsOfHeaderInThirdPanel=new ArrayList<>();
-        dark=false;
 
         UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
         //frame[
@@ -52,18 +56,14 @@ public class Predigest {
         frame.setLocationRelativeTo(null);
         frame.setSize(1200, 700);
         frame.setLayout(new BorderLayout());
-        frame.setBackground(Color.white);
-        frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
                 int closeConfirmed = JOptionPane.showConfirmDialog(null,
-                        "Are you sure you want to exit the program?", "Exit",
-                        JOptionPane.YES_NO_OPTION);
-
+                        "Are you sure you want to exit the program?", "Exit",JOptionPane.YES_NO_OPTION);
                 if (closeConfirmed == JOptionPane.YES_OPTION) {
                     int saveConfirmed = JOptionPane.showConfirmDialog(null,
-                            "Are you want to save the changes?", "Save",
-                            JOptionPane.YES_NO_OPTION);
+                            "Are you want to save the changes?", "Save", JOptionPane.YES_NO_OPTION);
                     if(saveConfirmed == JOptionPane.YES_OPTION) {
                         // save in file
                     }
@@ -71,6 +71,20 @@ public class Predigest {
                 }
             }
         });
+        TrayIcon trayIcon = new TrayIcon(Toolkit.getDefaultToolkit().getImage("icons\\logo.PNG"));
+        trayIcon.setToolTip("Running...");
+        trayIcon.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                super.mouseClicked(e);
+                frame.setVisible(true);
+            }
+        });
+        try {
+            SystemTray.getSystemTray().add(trayIcon);
+        }catch (Exception e){
+            System.out.println(e);
+        }
         //frame]
 
         // up side panel(logo+name+...)[
@@ -92,17 +106,17 @@ public class Predigest {
         // up side panel(logo+name+...)]
 
         // first panel[
-        JPanel firstPanel = new JPanel();
+        Panel firstPanel = new Panel();
         firstPanel.setLayout(new BorderLayout());
         firstPanel.setBorder(BorderFactory.createLineBorder(Color.gray));
         Dimension firstPanelDimension=firstPanel.getPreferredSize();
         firstPanelDimension.width=200;
         firstPanel.setPreferredSize(firstPanelDimension);
         // first panel -> north[
-        JPanel northPanelOfFirstPanel=new JPanel();
+        Panel northPanelOfFirstPanel=new Panel();
         northPanelOfFirstPanel.setBackground(Color.white);
         northPanelOfFirstPanel.setLayout(new BorderLayout());
-        JPanel searchRequestPanel=new JPanel();
+        Panel searchRequestPanel=new Panel();
         searchRequestPanel.setBackground(Color.white);
         PTextField searchTextField=new PTextField("Filter");
         Dimension searchTextFieldDimension=searchTextField.getPreferredSize();
@@ -116,7 +130,7 @@ public class Predigest {
         plusButtonOfFirstPanelDimension.width=37;
         plusButtonOfFirstPanel.setPreferredSize(plusButtonOfFirstPanelDimension);
         plusButtonOfFirstPanel.addActionListener(new buttonActionListener());
-        JLabel requestListLabel=new JLabel("Request List:");
+        Label requestListLabel=new Label("Request List:");
         requestListLabel.setFont(new Font("Arial", Font.BOLD, 15));
         requestListLabel.setForeground(new Color(0,100,0));
         northPanelOfFirstPanel.add(searchRequestPanel, BorderLayout.CENTER);
@@ -125,14 +139,19 @@ public class Predigest {
         firstPanel.add(northPanelOfFirstPanel, BorderLayout.NORTH);
         // first panel -> north]
         // first panel -> center[
-        JPanel centerPanelOfFirstPanel = new JPanel();
+        Panel centerPanelOfFirstPanel = new Panel();
         centerPanelOfFirstPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
         demoList = new DefaultListModel();
-        JList requestList=new JList(demoList);
+        JList requestList=new JList(demoList); //??????????????????????????????????????????????????????????????????SSSSSSSSSSSSSSSS
         requestList.addListSelectionListener(es->{
-            int index=requestList.getSelectedIndex();
-            secondPanel.add(secondPanelsOfRequestList.get(index));
-            thirdPanel.add(thirdPanelsOfRequestList.get(index));
+            selectedRequestIndex=requestList.getSelectedIndex();
+            secondPanel.removeAll();
+            thirdPanel.removeAll();
+            System.out.println("index: "+selectedRequestIndex+"\nnumber of second panels: "+secondPanelsOfRequestList.size()+"\nnumber of third panels: "+thirdPanelsOfRequestList.size());
+            secondPanel.add(secondPanelsOfRequestList.get(selectedRequestIndex));
+            thirdPanel.add(thirdPanelsOfRequestList.get(selectedRequestIndex));
+            secondPanel.setVisible(false); secondPanel.setVisible(true);
+            thirdPanel.setVisible(false); thirdPanel.setVisible(true);
             frame.setVisible(true);
         });
         firstPanel.add(requestList, BorderLayout.CENTER);
@@ -198,28 +217,67 @@ public class Predigest {
         JMenuBar menuBar = new JMenuBar();
         JMenu application, edit, view, help, option;
         JMenuItem exit, screen, slider, about, helpItem;
-        JCheckBox followRedirect, exitType;
-        ComboBox theme;
+        JCheckBox followRedirect, exitType, darkTheme;
         application = new JMenu("Application");
         application.setMnemonic('p');
         option=new JMenu("Option");
         option.setMnemonic('O');
         followRedirect=new JCheckBox("Follow redirect");
         followRedirect.setMnemonic('F');
+        followRedirect.addActionListener(followRedirectE->{
+
+        });
         exitType=new JCheckBox("Hide on system tray");
         exitType.setMnemonic('s');
-        theme=new ComboBox(new String[]{"Light theme", "Dark theme"});
-        theme.addActionListener(e ->{
-            if(Objects.equals(theme.getSelectedItem(), "Light theme")){
-
+        exitType.addActionListener(exitTypeE->{
+            if(exitType.isSelected())
+                frame.setDefaultCloseOperation(JFrame.ICONIFIED);
+            else
+                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        });
+        darkTheme=new JCheckBox("Dark theme");
+        darkTheme.setMnemonic('D');
+        darkTheme.addActionListener(darkThemeE->{
+            if (darkTheme.isSelected()) {
+                themeColor=new Color(100,100,100);
+                for(int i=0; i<requests.size(); i++) {
+                    for (int j = 0; j < 14; j++)
+                        panelNeedToSave.get(i).get(j).setBackground(themeColor);
+                    for(Panel panel: panelsOfHeaderInSecondPanel.get(i))
+                        panel.setBackground(themeColor);
+                }
+                for (Panel panel : someNotImportantPanel) panel.setBackground(themeColor);
+                firstPanel.setBackground(themeColor);
+                secondPanel.setBackground(themeColor);
+                thirdPanel.setBackground(themeColor);
+                northPanelOfFirstPanel.setBackground(themeColor);
+                centerPanelOfFirstPanel.setBackground(themeColor);
+                searchRequestPanel.setBackground(themeColor);
+                upPanel.setBackground(themeColor);
+                requestList.setBackground(themeColor);
+            } else {
+                themeColor=new Color(255,255,255);
+                for(int i=0; i<requests.size(); i++) {
+                    for (int j = 0; j < 14; j++)
+                        panelNeedToSave.get(i).get(j).setBackground(themeColor);
+                    for(Panel panel: panelsOfHeaderInSecondPanel.get(i))
+                        panel.setBackground(themeColor);
+                }
+                for (Panel panel : someNotImportantPanel) panel.setBackground(themeColor);
+                firstPanel.setBackground(themeColor);
+                secondPanel.setBackground(themeColor);
+                thirdPanel.setBackground(themeColor);
+                northPanelOfFirstPanel.setBackground(themeColor);
+                centerPanelOfFirstPanel.setBackground(themeColor);
+                searchRequestPanel.setBackground(themeColor);
+                upPanel.setBackground(themeColor);
+                requestList.setBackground(themeColor);
             }
-            else{
-
-            }
+            frame.setVisible(true);
         });
         option.add(followRedirect);
         option.add(exitType);
-        option.add(theme);
+        option.add(darkTheme);
         exit=new JMenuItem("Exit",'x');
         exit.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.ALT_MASK));
         exit.addActionListener(e ->{
@@ -233,8 +291,25 @@ public class Predigest {
         view.setMnemonic('i');
         screen=new JMenuItem("Toggle Full Screen",'F');
         screen.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F, Event.CTRL_MASK));
+        screen.addActionListener(screenE->{
+            if(frame.getExtendedState()==JFrame.MAXIMIZED_BOTH)
+                frame.setSize(1200, 700);
+            else
+               frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+        });
         slider=new JMenuItem("Toggle Slider",'S');
-        screen.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, Event.CTRL_MASK));
+        slider.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, Event.CTRL_MASK));
+        slider.addActionListener(sliderE->{
+            if(stateOfFirstPanel) {
+                frame.remove(firstPanel);
+                stateOfFirstPanel=false;
+            }
+            else {
+                frame.add(firstPanel, BorderLayout.WEST);
+                stateOfFirstPanel=true;
+            }
+            frame.setVisible(true);
+        });
         view.add(screen);
         view.add(slider);
         help = new JMenu("Help");
@@ -252,13 +327,12 @@ public class Predigest {
         menuBar.add(help);
         frame.setJMenuBar(menuBar);
         // frame menu bar]
-
     }
 
     /**
      * This method is action process of plus button for create new folder or new request.
      */
-    private void plusButtonAction(){
+    private void plusButtonAction(Color color){
         JPopupMenu popupMenu = new JPopupMenu();
         JMenuItem newRequest = new JMenuItem("New Request");
         JMenuItem newFolder = new JMenuItem("New Folder");
@@ -293,8 +367,7 @@ public class Predigest {
                 requests.add(request);
                 demoList.addElement(request.getType()+" "+requestTextField.getText());
                 requestFrame.dispatchEvent(new WindowEvent(requestFrame, WindowEvent.WINDOW_CLOSING));
-                secondPanelsOfRequestList.add(makeSecondPanel());
-                thirdPanelsOfRequestList.add(makeThirdPanel());
+                createSecondAndThirdPanels(color);
                 frame.setVisible(true);
             });
             // new request action]
@@ -310,9 +383,9 @@ public class Predigest {
         return dir.listFiles((dir1, filename) -> filename.endsWith(".txt"));
     }
 
-    private void createHeaderComponent(@NotNull Panel headerPanel){
+    private void createHeaderComponent( Panel headerPanel, Color color){
         Panel panel=new Panel();
-        panel.setBackground(Color.white);
+        panel.setBackground(color);
         PTextField textFieldHeader=new PTextField("New Header");
         Dimension dimension1=textFieldHeader.getPreferredSize();
         dimension1.width=190;
@@ -323,7 +396,7 @@ public class Predigest {
             }
             @Override
             public void focusGained(FocusEvent e) {
-                createHeaderComponent(headerPanel);
+                createHeaderComponent(headerPanel, color);
             }
         };
         textFieldHeader.addFocusListener(focusListener);
@@ -338,14 +411,12 @@ public class Predigest {
         panel.add(textFieldValue);
         panel.add(checkBox);
         panel.add(button);
-        //System.out.println("Count: $$$$$$$$$$$$$$$$$$ :   "+headerPanel.getComponentCount());
         headerPanel.add(panel);
         frame.setVisible(true);
         int compIndex=headerPanel.getComponentCount();
         if(compIndex!=1) {
-            System.out.println("in if..........");
-            System.out.println("Panel num: "+(compIndex-2));
-            panelsOfHeaderInSecondPanel.get(compIndex-2).removeAll();
+            System.out.println("comp index: "+compIndex);
+            panelsOfHeaderInSecondPanel.get(selectedRequestIndex).get(compIndex-2).removeAll();
             PTextField atextFieldHeader=new PTextField("New Header");
             Dimension adimension1=textFieldHeader.getPreferredSize();
             dimension1.width=190;
@@ -356,12 +427,17 @@ public class Predigest {
             atextFieldValue.setPreferredSize(adimension2);
             CheckBox acheckBox=new CheckBox();
             Button abutton=new Button(new ImageIcon("icons\\trash.PNG"));
-            panelsOfHeaderInSecondPanel.get(compIndex-2).add(atextFieldHeader);
-            panelsOfHeaderInSecondPanel.get(compIndex-2).add(atextFieldValue);
-            panelsOfHeaderInSecondPanel.get(compIndex-2).add(acheckBox);
-            panelsOfHeaderInSecondPanel.get(compIndex-2).add(abutton);
+            panelsOfHeaderInSecondPanel.get(selectedRequestIndex).get(compIndex-2).add(atextFieldHeader);
+            panelsOfHeaderInSecondPanel.get(selectedRequestIndex).get(compIndex-2).add(atextFieldValue);
+            panelsOfHeaderInSecondPanel.get(selectedRequestIndex).get(compIndex-2).add(acheckBox);
+            panelsOfHeaderInSecondPanel.get(selectedRequestIndex).get(compIndex-2).add(abutton);
+            panelsOfHeaderInSecondPanel.get(selectedRequestIndex).add(panel);
         }
-        panelsOfHeaderInSecondPanel.add(panel);
+        else{
+            ArrayList<Panel> panelInHeader=new ArrayList<>();
+            panelInHeader.add(panel);
+            panelsOfHeaderInSecondPanel.put(requests.size()-1, panelInHeader);
+        }
     }
 
     /**
@@ -369,15 +445,23 @@ public class Predigest {
      * @return
      */
     @NotNull
-    private Panel makeSecondPanel(){
+    private void createSecondAndThirdPanels(Color color){
+        ArrayList<Panel> savePanelArrayList=new ArrayList<>();
+        //second panel[
         Panel secondPanel = new Panel();
         secondPanel.setLayout(new BorderLayout());
         secondPanel.setBorder(BorderFactory.createLineBorder(Color.gray));
         // second panel -> north[
         Panel northPanelOfSecondPanel=new Panel();
+        savePanelArrayList.add(northPanelOfSecondPanel); // add 1
         northPanelOfSecondPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
-        northPanelOfSecondPanel.setBackground(Color.white);
+        northPanelOfSecondPanel.setBackground(color);
         ComboBox typeComboBox=new ComboBox(new String[]{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"});
+        typeComboBox.addActionListener(typeComboBoxEvent->{
+            requests.get(selectedRequestIndex).setType(typeComboBox.getSelectedItem().toString());
+            demoList.setElementAt(typeComboBox.getSelectedItem().toString()+" "+requests.get(selectedRequestIndex).getName(),selectedRequestIndex);
+            frame.setVisible(true);
+        });
         PTextField URLTextFieldSecondPanel=new PTextField("https://...");
         Dimension textFieldSecondPanelDimension=URLTextFieldSecondPanel.getPreferredSize();
         textFieldSecondPanelDimension.width=320;
@@ -389,24 +473,32 @@ public class Predigest {
         secondPanel.add(northPanelOfSecondPanel,BorderLayout.NORTH);
         // second panel -> north]
         // second panel -> center[
-        JPanel centerPanelOfSecondPanel=new JPanel();
+        Panel centerPanelOfSecondPanel=new Panel();
+        someNotImportantPanel.add(centerPanelOfSecondPanel);
         centerPanelOfSecondPanel.setLayout(new BorderLayout());
-        centerPanelOfSecondPanel.setBackground(Color.white);
+        centerPanelOfSecondPanel.setBackground(color);
         TabbedPane tabbedPaneOfSecondPanel=new TabbedPane();
         Panel body=new Panel();
-        body.setBackground(Color.white);
+        savePanelArrayList.add(body); // add 2
+        body.setBackground(color);
         Panel bodyItem=new Panel();
+        savePanelArrayList.add(bodyItem); // add 3
         Panel auth=new Panel();
-        auth.setBackground(Color.white);
+        savePanelArrayList.add(auth); // add 4
+        auth.setBackground(color);
         Panel authItem=new Panel();
+        savePanelArrayList.add(authItem); // add 5
         Panel query=new Panel();
-        query.setBackground(Color.white);
+        savePanelArrayList.add(query); // add 6
+        query.setBackground(color);
         Panel header=new Panel();
+        savePanelArrayList.add(header); // add 7
         header.setLayout(new BoxLayout(header, BoxLayout.Y_AXIS));
-        header.setBackground(Color.white);
-        createHeaderComponent(header);
+        header.setBackground(color);
+        createHeaderComponent(header, color);
         Panel docs=new Panel();
-        docs.setBackground(Color.white);
+        savePanelArrayList.add(docs); // add 8
+        docs.setBackground(color);
         tabbedPaneOfSecondPanel.add("Body",body);
         tabbedPaneOfSecondPanel.add("v",bodyItem);
         tabbedPaneOfSecondPanel.add("Auth",auth);
@@ -453,12 +545,8 @@ public class Predigest {
                 tabbedPaneOfSecondPanel.setSelectedIndex(2);
             }
         });
-        return secondPanel;
-    }
-
-
-    @NotNull
-    private Panel makeThirdPanel(){
+        secondPanelsOfRequestList.add(secondPanel);
+        //second panel]
         //third panel[
         Panel thirdPanel = new Panel();
         thirdPanel.setLayout(new BorderLayout());
@@ -468,8 +556,9 @@ public class Predigest {
         thirdPanel.setPreferredSize(thirdPanelDimension);
         // third panel -> north[
         Panel northPanelOfThirdPanel=new Panel();
+        savePanelArrayList.add(northPanelOfThirdPanel); // add 9
         northPanelOfThirdPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
-        northPanelOfThirdPanel.setBackground(Color.white);
+        northPanelOfThirdPanel.setBackground(color);
         //northPanelOfThirdPanel.setBorder(new Border());
         Label labelDetailOfThirdPanel=new Label("200 OK  3 s  20 KB");
         labelDetailOfThirdPanel.setFont(new Font("Serif", Font.ITALIC, 21));
@@ -479,19 +568,25 @@ public class Predigest {
         // third panel -> north]
         // third panel -> center[
         Panel centerPanelOfThirdPanel=new Panel();
+        someNotImportantPanel.add(centerPanelOfThirdPanel);
         centerPanelOfThirdPanel.setLayout(new BorderLayout());
-        centerPanelOfThirdPanel.setBackground(Color.white);
+        centerPanelOfThirdPanel.setBackground(color);
         TabbedPane tabbedPaneOfThirdPanel=new TabbedPane();
         Panel raw=new Panel();
-        raw.setBackground(Color.white);
+        savePanelArrayList.add(raw); // add 10
+        raw.setBackground(color);
         Panel rawItemPanel=new Panel();
+        savePanelArrayList.add(rawItemPanel); // add 11
         Panel aHeader=new Panel();
-        aHeader.setBackground(Color.white);
+        savePanelArrayList.add(aHeader); // add 12
+        aHeader.setBackground(color);
         aHeader.setLayout(new BorderLayout());
         Panel cookie=new Panel();
-        cookie.setBackground(Color.white);
+        savePanelArrayList.add(cookie); // add 13
+        cookie.setBackground(color);
         Panel timeLine=new Panel();
-        timeLine.setBackground(Color.white);
+        savePanelArrayList.add(timeLine); // add 14
+        timeLine.setBackground(color);
         tabbedPaneOfThirdPanel.add("Raw",raw);
         tabbedPaneOfThirdPanel.add("v",rawItemPanel);
         tabbedPaneOfThirdPanel.add("Header",aHeader);
@@ -507,7 +602,8 @@ public class Predigest {
             if(tabbedPaneOfThirdPanel.getSelectedIndex()==2){
                 Panel centerHeader=new Panel();
                 centerHeader.setLayout(new GridLayout(9,2));
-                centerHeader.setBackground(Color.white);
+                centerHeader.setBackground(color);
+                someNotImportantPanel.add(centerHeader);
                 centerHeader.add((new Label(" NAME")));
                 Label name=new Label(" null");
                 labelsOfHeaderInThirdPanel.add(name);
@@ -573,8 +669,9 @@ public class Predigest {
         centerPanelOfThirdPanel.add(tabbedPaneOfThirdPanel);
         thirdPanel.add(centerPanelOfThirdPanel,BorderLayout.CENTER);
         // third panel -> center]
-        return thirdPanel;
+        thirdPanelsOfRequestList.add(thirdPanel);
         //third panel]
+        panelNeedToSave.put(requests.size()-1,savePanelArrayList);
     }
 
     private void darkLight(){
@@ -587,7 +684,7 @@ public class Predigest {
         @Override
         public void actionPerformed(ActionEvent actionEvent) {
             if(actionEvent.getSource().equals(plusButtonOfFirstPanel)){
-                plusButtonAction();
+                plusButtonAction(themeColor);
             }
         }
     }

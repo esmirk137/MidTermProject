@@ -23,4 +23,8 @@ public class Request implements Serializable {
     public String getName() {
         return name;
     }
+
+    public void setType(String type) {
+        this.type = type;
+    }
 }
