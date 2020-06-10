@@ -9,50 +9,97 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.event.*;
 import java.io.*;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Scanner;
 
 /**
- * This class represent graphic of my project, predigest.
+ * This class represent my project with graphic.
+ * Name of my app is "Predigest".
+ * @author Sayed Mohammad Ali Mirkazemi
+ * @version 1.0.0
+ * @since 6/10/2020
  */
 public class Predigest {
     private JFrame frame;
-    private JButton plusButtonOfFirstPanel;
-    private ArrayList<Request> requests;
-    private int selectedRequestIndex;
-    private boolean stateOfFirstPanel;
+    private JCheckBox followRedirect, exitType, darkTheme;
     private Color themeColor;
-    private Panel secondPanel;
-    private Panel thirdPanel;
-    private HashMap<Integer,ArrayList<Panel>> panelNeedToSave;
-    private ArrayList<Panel> someNotImportantPanel;
-    private ArrayList<Panel> secondPanelsOfRequestList;
-    private HashMap<Integer,ArrayList<Panel>> panelsOfHeaderInSecondPanel;
-    private ArrayList<Panel> thirdPanelsOfRequestList;
-    private ArrayList<Label> labelsOfHeaderInThirdPanel;
+
+    private boolean stateOfFirstPanel;
+    private JPanel firstPanel;
+    private JButton plusButtonOfFirstPanel;
     private DefaultListModel demoList;
+    private JList jListOfRequest;
+    private ArrayList<Request> arrayListOfRequestObjects;
+    private int selectedRequestIndex;
+
+    private JPanel secondPanel;
+    private JComboBox requestMethodComboBox;
+    private PTextField URLTextFiled;
+    private JPanel bodyPanel;
+    private JPanel headerPanel;
+    private JPanel queryPanel;
+    private ArrayList<JPanel> dataFormMassageBody;
+    private ArrayList<JPanel> headersOfHeaderPanel;
+    private ArrayList<JPanel> queriesOfHeaderPanel;
+
+    private JPanel thirdPanel;
+    private JPanel raw;
+    private JLabel detailLabelOfThirdPanel;
+    private ArrayList<JLabel> labelsOfHeaderInThirdPanel;
+
+    private ArrayList<JComponent> someUnknownComponent;
+
 
     /**
      * This is constructor of this class and allocate fields and make main frame.
-     * @throws ClassNotFoundException thrown as a result of three different method calls, all of which handling loading classes by name.
-     * @throws UnsupportedLookAndFeelException An exception that indicates the requested look & feel management classes are not present on the user's system.
-     * @throws InstantiationException Thrown when an application tries to create an instance of a class using the newInstance method in class Class, but the specified class object cannot be instantiated.
-     * @throws IllegalAccessException thrown when an application tries to reflectively create an instance (other than an array), set or get a field, or invoke a method, but the currently executing method does not have access to the definition of the specified class, field, method or constructor.
+     * ??????????????????????//
+     * ?????????????
      */
-    public Predigest() throws ClassNotFoundException, UnsupportedLookAndFeelException, InstantiationException, IllegalAccessException {
-        selectedRequestIndex=0;
-        stateOfFirstPanel=true;
+    public Predigest(){
+        //initialization[
+        try{
+            UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
+        }catch (ClassNotFoundException e){
+            System.out.println("Exception: "+e.getException());
+        }catch (UnsupportedLookAndFeelException e){
+            System.out.println("This system does not support this look and feel.");
+        }catch (InstantiationException e){
+            System.out.println("Instantiation exception.");
+        }catch (IllegalAccessException e){
+            System.out.println("IllegalAccess Exception");
+        }
+
+        frame = new JFrame("Predigest Designer");
+        followRedirect=new JCheckBox("Follow redirect");
+        darkTheme=new JCheckBox("Dark theme");
+        exitType=new JCheckBox("Hide on system tray");
         themeColor=new Color(255,255,255);
-        requests=new ArrayList<>();
-        panelNeedToSave=new HashMap<>();
-        someNotImportantPanel=new ArrayList<>();
-        secondPanelsOfRequestList=new ArrayList<>();
-        thirdPanelsOfRequestList=new ArrayList<>();
-        panelsOfHeaderInSecondPanel=new HashMap<>();
+        stateOfFirstPanel=true;
+        firstPanel = new JPanel();
+        plusButtonOfFirstPanel = new JButton("+");
+        demoList=new DefaultListModel();
+        jListOfRequest = new JList(demoList);
+        arrayListOfRequestObjects=new ArrayList<>();
+        selectedRequestIndex=0;
+
+        secondPanel = new JPanel();
+        requestMethodComboBox=new JComboBox(new String[]{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"});
+        URLTextFiled=new PTextField("https://...");
+        bodyPanel=new JPanel();
+        headerPanel=new JPanel();
+        queryPanel=new JPanel();
+        dataFormMassageBody=new ArrayList<>();
+        headersOfHeaderPanel=new ArrayList<>();
+        queriesOfHeaderPanel=new ArrayList<>();
+
+        thirdPanel = new JPanel();
+        raw=new JPanel();
+        detailLabelOfThirdPanel=new JLabel();
         labelsOfHeaderInThirdPanel=new ArrayList<>();
 
-        UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
+        someUnknownComponent=new ArrayList<>();
+        //initialization]
+
         //frame[
-        frame = new JFrame("Predigest Designer");
         frame.setLocationRelativeTo(null);
         frame.setSize(1200, 700);
         frame.setLayout(new BorderLayout());
@@ -65,7 +112,7 @@ public class Predigest {
                     int saveConfirmed = JOptionPane.showConfirmDialog(null,
                             "Are you want to save the changes?", "Save", JOptionPane.YES_NO_OPTION);
                     if(saveConfirmed == JOptionPane.YES_OPTION) {
-                        // save in file
+                        save();
                     }
                     frame.dispose();
                 }
@@ -83,11 +130,11 @@ public class Predigest {
         try {
             SystemTray.getSystemTray().add(trayIcon);
         }catch (Exception e){
-            System.out.println(e);
+            e.printStackTrace();
         }
         //frame]
 
-        // up side panel(logo+name+...)[
+        //up side panel(logo+name+...)[
         JPanel upPanel=new JPanel();
         upPanel.setBackground(Color.white);
         upPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
@@ -103,176 +150,67 @@ public class Predigest {
         upPanel.add(labelLogoName);
         upPanel.add(labelExplain);
         frame.add(upPanel, BorderLayout.BEFORE_FIRST_LINE);
-        // up side panel(logo+name+...)]
+        //up side panel(logo+name+...)]
 
-        // first panel[
-        Panel firstPanel = new Panel();
-        firstPanel.setLayout(new BorderLayout());
-        firstPanel.setBorder(BorderFactory.createLineBorder(Color.gray));
-        Dimension firstPanelDimension=firstPanel.getPreferredSize();
-        firstPanelDimension.width=200;
-        firstPanel.setPreferredSize(firstPanelDimension);
-        // first panel -> north[
-        Panel northPanelOfFirstPanel=new Panel();
-        northPanelOfFirstPanel.setBackground(Color.white);
-        northPanelOfFirstPanel.setLayout(new BorderLayout());
-        Panel searchRequestPanel=new Panel();
-        searchRequestPanel.setBackground(Color.white);
-        PTextField searchTextField=new PTextField("Filter");
-        Dimension searchTextFieldDimension=searchTextField.getPreferredSize();
-        searchTextFieldDimension.width=150;
-        searchTextField.setPreferredSize(searchTextFieldDimension);
-        searchRequestPanel.add(searchTextField);
-        plusButtonOfFirstPanel=new JButton("+");
-        plusButtonOfFirstPanel.setFont(new Font("Arial", Font.BOLD, 15));
-        Dimension plusButtonOfFirstPanelDimension= plusButtonOfFirstPanel.getPreferredSize();
-        plusButtonOfFirstPanelDimension.height=37;
-        plusButtonOfFirstPanelDimension.width=37;
-        plusButtonOfFirstPanel.setPreferredSize(plusButtonOfFirstPanelDimension);
-        plusButtonOfFirstPanel.addActionListener(new buttonActionListener());
-        Label requestListLabel=new Label("Request List:");
-        requestListLabel.setFont(new Font("Arial", Font.BOLD, 15));
-        requestListLabel.setForeground(new Color(0,100,0));
-        northPanelOfFirstPanel.add(searchRequestPanel, BorderLayout.CENTER);
-        northPanelOfFirstPanel.add(plusButtonOfFirstPanel, BorderLayout.EAST);
-        northPanelOfFirstPanel.add(requestListLabel, BorderLayout.SOUTH);
-        firstPanel.add(northPanelOfFirstPanel, BorderLayout.NORTH);
-        // first panel -> north]
-        // first panel -> center[
-        Panel centerPanelOfFirstPanel = new Panel();
-        centerPanelOfFirstPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
-        demoList = new DefaultListModel();
-        JList requestList=new JList(demoList); //??????????????????????????????????????????????????????????????????SSSSSSSSSSSSSSSS
-        requestList.addListSelectionListener(es->{
-            selectedRequestIndex=requestList.getSelectedIndex();
-            secondPanel.removeAll();
-            thirdPanel.removeAll();
-            System.out.println("index: "+selectedRequestIndex+"\nnumber of second panels: "+secondPanelsOfRequestList.size()+"\nnumber of third panels: "+thirdPanelsOfRequestList.size());
-            secondPanel.add(secondPanelsOfRequestList.get(selectedRequestIndex));
-            thirdPanel.add(thirdPanelsOfRequestList.get(selectedRequestIndex));
-            secondPanel.setVisible(false); secondPanel.setVisible(true);
-            thirdPanel.setVisible(false); thirdPanel.setVisible(true);
-            frame.setVisible(true);
-        });
-        firstPanel.add(requestList, BorderLayout.CENTER);
-        // first panel -> center]
-        frame.add(firstPanel,BorderLayout.WEST);
-        // first panel]
+        //firstPanel[
+        createFirstPanel();
+        //firstPanel]
 
-        // second panel[
-        secondPanel = new Panel();
-        secondPanel.setBackground(Color.white);
-        secondPanel.setBorder(BorderFactory.createLineBorder(Color.gray));
-        secondPanel.setLayout(new CardLayout());
-        frame.add(secondPanel,BorderLayout.CENTER);
-        // second panel]
-        // third panel[
-        thirdPanel = new Panel();
-        thirdPanel.setBackground(Color.white);
-        thirdPanel.setBorder(BorderFactory.createLineBorder(Color.gray));
-        thirdPanel.setLayout(new CardLayout());
-        frame.add(thirdPanel,BorderLayout.EAST);
-        // third panel]
+        //secondPanel[
+        createSecondPanel();
+        //secondPanel]
 
-        // load first panel[
-        File[] requestFile=textFileFinder("save\\requests");
-        if(requestFile.length!=0) {
-            for (File i : requestFile) {
-                try (ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream("save\\requests\\" + i.getName()))) {
-                    Request request = (Request) objectInputStream.readObject();
-                    requests.add(request);
-                    demoList.addElement(request.getType() + " " + request.getName());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        File[] secondPanelFile=textFileFinder("save\\secondPanels");
-        if(requestFile.length!=0) {
-            for (File i : secondPanelFile) {
-                try (ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream("save\\secondPanels\\" + i.getName()))) {
-                    System.out.print("name: "+i.getName());
-                    Panel aSecondPanel = (Panel) objectInputStream.readObject();
-                    secondPanelsOfRequestList.add(aSecondPanel);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        File[] thirdPanelFile=textFileFinder("save\\thirdPanels");
-        if(requestFile.length!=0) {
-            for (File i : thirdPanelFile) {
-                try (ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream("save\\thirdPanels\\" + i.getName()))) {
-                    Panel aThirdPanel = (Panel) objectInputStream.readObject();
-                    thirdPanelsOfRequestList.add(aThirdPanel);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        // load first panel]
+        //thirdPanel[
+        createThirdPanel();
+        //thirdPanel]
+        frame.setVisible(true);
+
+        // load[
+
+        // load]
 
 
         // frame menu bar[
         JMenuBar menuBar = new JMenuBar();
         JMenu application, edit, view, help, option;
         JMenuItem exit, screen, slider, about, helpItem;
-        JCheckBox followRedirect, exitType, darkTheme;
         application = new JMenu("Application");
         application.setMnemonic('p');
         option=new JMenu("Option");
         option.setMnemonic('O');
-        followRedirect=new JCheckBox("Follow redirect");
         followRedirect.setMnemonic('F');
         followRedirect.addActionListener(followRedirectE->{
-
+            // no implement yet
         });
-        exitType=new JCheckBox("Hide on system tray");
         exitType.setMnemonic('s');
         exitType.addActionListener(exitTypeE->{
             if(exitType.isSelected())
-                frame.setDefaultCloseOperation(JFrame.ICONIFIED);
+                frame.setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
             else
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         });
-        darkTheme=new JCheckBox("Dark theme");
         darkTheme.setMnemonic('D');
         darkTheme.addActionListener(darkThemeE->{
             if (darkTheme.isSelected()) {
-                themeColor=new Color(100,100,100);
-                for(int i=0; i<requests.size(); i++) {
-                    for (int j = 0; j < 14; j++)
-                        panelNeedToSave.get(i).get(j).setBackground(themeColor);
-                    for(Panel panel: panelsOfHeaderInSecondPanel.get(i))
+                themeColor=new Color(50,50,50);
+                for(int i=0; i<arrayListOfRequestObjects.size(); i++) {
+                    for(JPanel panel: headersOfHeaderPanel)
                         panel.setBackground(themeColor);
                 }
-                for (Panel panel : someNotImportantPanel) panel.setBackground(themeColor);
-                firstPanel.setBackground(themeColor);
-                secondPanel.setBackground(themeColor);
-                thirdPanel.setBackground(themeColor);
-                northPanelOfFirstPanel.setBackground(themeColor);
-                centerPanelOfFirstPanel.setBackground(themeColor);
-                searchRequestPanel.setBackground(themeColor);
-                upPanel.setBackground(themeColor);
-                requestList.setBackground(themeColor);
+                for (JComponent component : someUnknownComponent) component.setBackground(themeColor);
             } else {
                 themeColor=new Color(255,255,255);
-                for(int i=0; i<requests.size(); i++) {
-                    for (int j = 0; j < 14; j++)
-                        panelNeedToSave.get(i).get(j).setBackground(themeColor);
-                    for(Panel panel: panelsOfHeaderInSecondPanel.get(i))
+                for(int i=0; i<arrayListOfRequestObjects.size(); i++) {
+                    for(JPanel panel: headersOfHeaderPanel)
                         panel.setBackground(themeColor);
                 }
-                for (Panel panel : someNotImportantPanel) panel.setBackground(themeColor);
-                firstPanel.setBackground(themeColor);
-                secondPanel.setBackground(themeColor);
-                thirdPanel.setBackground(themeColor);
-                northPanelOfFirstPanel.setBackground(themeColor);
-                centerPanelOfFirstPanel.setBackground(themeColor);
-                searchRequestPanel.setBackground(themeColor);
-                upPanel.setBackground(themeColor);
-                requestList.setBackground(themeColor);
+                for (JComponent component : someUnknownComponent) component.setBackground(themeColor);
             }
+            firstPanel.setBackground(themeColor);
+            secondPanel.setBackground(themeColor);
+            thirdPanel.setBackground(themeColor);
+            upPanel.setBackground(themeColor);
+            jListOfRequest.setBackground(themeColor);
             frame.setVisible(true);
         });
         option.add(followRedirect);
@@ -290,15 +228,15 @@ public class Predigest {
         view =new JMenu("View");
         view.setMnemonic('i');
         screen=new JMenuItem("Toggle Full Screen",'F');
-        screen.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F, Event.CTRL_MASK));
+        screen.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F, InputEvent.CTRL_MASK));
         screen.addActionListener(screenE->{
             if(frame.getExtendedState()==JFrame.MAXIMIZED_BOTH)
                 frame.setSize(1200, 700);
             else
-               frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+                frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
         });
         slider=new JMenuItem("Toggle Slider",'S');
-        slider.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, Event.CTRL_MASK));
+        slider.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_MASK));
         slider.addActionListener(sliderE->{
             if(stateOfFirstPanel) {
                 frame.remove(firstPanel);
@@ -315,7 +253,31 @@ public class Predigest {
         help = new JMenu("Help");
         help.setMnemonic('e');
         about=new JMenuItem("About",'A');
-        about.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_A, Event.CTRL_MASK));
+        about.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_A, InputEvent.CTRL_MASK));
+        about.addActionListener(aboutE->{
+            JFrame jFrame=new JFrame("Welcome to me...!");
+            jFrame.setLocationRelativeTo(null);
+            jFrame.setSize(300, 120);
+            jFrame.setLayout(new BorderLayout());
+            jFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+            JPanel jPanel=new JPanel();
+            jPanel.setBackground(themeColor);
+            JLabel jLabel1=new JLabel("Name: Sayed Mohammad Ali Mirkazemi");
+            JLabel jLabel2=new JLabel("ID: 9831064");
+            JLabel jLabel3=new JLabel("g-mail: esmirk317@gmail.com");
+            jLabel1.setFont(new Font("Arial", Font.BOLD, 15));
+            jLabel2.setFont(new Font("Arial", Font.BOLD, 15));
+            jLabel3.setFont(new Font("Arial", Font.BOLD, 15));
+            jLabel1.setForeground(new Color(10,90,90));
+            jLabel2.setForeground(new Color(10,90,90));
+            jLabel3.setForeground(new Color(10,90,90));
+            jPanel.add(jLabel1);
+            jPanel.add(jLabel2);
+            jPanel.add(jLabel3);
+            jFrame.add(jPanel);
+            jFrame.setResizable(false);
+            jFrame.setVisible(true);
+        });
         helpItem=new JMenuItem("Help",'H');
         helpItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_H, Event.CTRL_MASK));
         help.add(about);
@@ -329,10 +291,93 @@ public class Predigest {
         // frame menu bar]
     }
 
+    private void createFirstPanel(){
+        // first panel[
+        firstPanel.setLayout(new BorderLayout());
+        firstPanel.setBorder(BorderFactory.createLineBorder(Color.gray));
+        Dimension firstPanelDimension = firstPanel.getPreferredSize();
+        firstPanelDimension.width = 200;
+        firstPanel.setPreferredSize(firstPanelDimension);
+        // first panel -> north[
+        JPanel northPanelOfFirstPanel = new JPanel();
+        someUnknownComponent.add(northPanelOfFirstPanel);
+        northPanelOfFirstPanel.setBackground(Color.white);
+        northPanelOfFirstPanel.setLayout(new BorderLayout());
+        JPanel searchRequestPanel = new JPanel();
+        someUnknownComponent.add(searchRequestPanel);
+        searchRequestPanel.setBackground(Color.white);
+        PTextField searchTextField = new PTextField("Filter");
+        Dimension searchTextFieldDimension = searchTextField.getPreferredSize();
+        searchTextFieldDimension.width = 150;
+        searchTextField.setPreferredSize(searchTextFieldDimension);
+        searchRequestPanel.add(searchTextField);
+        plusButtonOfFirstPanel.setFont(new Font("Arial", Font.BOLD, 15));
+        Dimension plusButtonOfFirstPanelDimension = plusButtonOfFirstPanel.getPreferredSize();
+        plusButtonOfFirstPanelDimension.height = 37;
+        plusButtonOfFirstPanelDimension.width = 37;
+        plusButtonOfFirstPanel.setPreferredSize(plusButtonOfFirstPanelDimension);
+        plusButtonOfFirstPanel.addActionListener(new buttonActionListener());
+        JLabel requestListLabel = new JLabel("Request List:");
+        requestListLabel.setFont(new Font("Arial", Font.BOLD, 15));
+        requestListLabel.setForeground(new Color(0, 100, 0));
+        northPanelOfFirstPanel.add(searchRequestPanel, BorderLayout.CENTER);
+        northPanelOfFirstPanel.add(plusButtonOfFirstPanel, BorderLayout.EAST);
+        northPanelOfFirstPanel.add(requestListLabel, BorderLayout.SOUTH);
+        firstPanel.add(northPanelOfFirstPanel, BorderLayout.NORTH);
+        // first panel -> north]
+        // first panel -> center[
+        JPanel centerPanelOfFirstPanel = new JPanel();
+        someUnknownComponent.add(centerPanelOfFirstPanel);
+        centerPanelOfFirstPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+        jListOfRequest.addListSelectionListener(event -> {
+            if (!event.getValueIsAdjusting()) {
+                //System.out.println("change........."); //test...............................................
+                selectedRequestIndex = jListOfRequest.getSelectedIndex();
+                //System.out.println("Selected index is: "+selectedRequestIndex); //test...............................................
+                Request request = arrayListOfRequestObjects.get(selectedRequestIndex);
+
+                frame.setVisible(true);
+                //set request method to combo box
+                //System.out.println("method is: "+arrayListOfRequestObjects.get(selectedRequestIndex).getRequestMethod()); //test...............................................
+                requestMethodComboBox.setSelectedItem(arrayListOfRequestObjects.get(selectedRequestIndex).getRequestMethod());
+                //set url on textfield
+                URLTextFiled.setText(request.getURL());
+                //set headers
+                if (request.getHeaders().size() != 0) {
+                    for (String key : request.getHeaders().keySet()) {
+                        createHeaderComponent(key, request.getHeaders().get(key));
+                    }
+                }
+                //set response header
+
+                //setMassageBody
+                if (request.getMassageBodyType().equals("multipart form")) {
+                    if (request.getMassageBodyFormData().size() != 0) {
+                        for (String key : request.getMassageBodyFormData().keySet()) {
+                            // createHeaderComponent(bodyPanel, themeColor, key, request.getMassageBodyFormData().get(key),true);
+                        }
+                    }
+                } else {
+                    //Json
+                }
+                //set detail
+                detailLabelOfThirdPanel.setText(request.getResponseCode() + " " + request.getResponseMassage() + "  " + request.getTime() + " ms   " + request.getLength() + " byte");
+                secondPanel.setVisible(false);
+                secondPanel.setVisible(true);
+                thirdPanel.setVisible(false);
+                thirdPanel.setVisible(true);
+                frame.setVisible(true);
+            }
+        });
+        firstPanel.add(jListOfRequest, BorderLayout.CENTER);
+        // first panel -> center]
+        frame.add(firstPanel, BorderLayout.WEST);
+        // first panel]
+    }
     /**
      * This method is action process of plus button for create new folder or new request.
      */
-    private void plusButtonAction(Color color){
+    private void plusButtonAction(){
         JPopupMenu popupMenu = new JPopupMenu();
         JMenuItem newRequest = new JMenuItem("New Request");
         JMenuItem newFolder = new JMenuItem("New Folder");
@@ -363,163 +408,181 @@ public class Predigest {
             requestFrame.add(create);
             requestFrame.setVisible(true);
             create.addActionListener(event-> {
-                Request request=new Request(comboBox.getSelectedItem().toString(),requestTextField.getText(),"");
-                requests.add(request);
-                demoList.addElement(request.getType()+" "+requestTextField.getText());
+                Request request=new Request(requestTextField.getText(), comboBox.getSelectedItem().toString());
+                arrayListOfRequestObjects.add(request);
+                demoList.addElement(request.getRequestMethod()+" "+requestTextField.getText());
                 requestFrame.dispatchEvent(new WindowEvent(requestFrame, WindowEvent.WINDOW_CLOSING));
-                createSecondAndThirdPanels(color);
                 frame.setVisible(true);
             });
             // new request action]
         });
     }
 
-    /**
-     * This method find text file in a folder.
-     * @return these file as array
-     */
-    private File[] textFileFinder(String path){
-        File dir = new File(path);
-        return dir.listFiles((dir1, filename) -> filename.endsWith(".txt"));
-    }
-
-    private void createHeaderComponent( Panel headerPanel, Color color){
-        Panel panel=new Panel();
-        panel.setBackground(color);
-        PTextField textFieldHeader=new PTextField("New Header");
-        Dimension dimension1=textFieldHeader.getPreferredSize();
-        dimension1.width=190;
-        textFieldHeader.setPreferredSize(dimension1);
+    private void createHeaderComponent(String keyString, String valueString){
+        JPanel panel=new JPanel();
+        panel.setBackground(themeColor);
+        headerPanel.add(panel);
+        headersOfHeaderPanel.add(panel);
+        //FocusListener
         FocusListener focusListener=new FocusListener() {
             @Override
             public void focusLost(FocusEvent e) {
             }
             @Override
             public void focusGained(FocusEvent e) {
-                createHeaderComponent(headerPanel, color);
+                createHeaderComponent( "New Key","New Value");
             }
         };
-        textFieldHeader.addFocusListener(focusListener);
-        PTextField textFieldValue=new PTextField("New Value");
+        PTextField textFieldKey=new PTextField(keyString);
+        Dimension dimension1=textFieldKey.getPreferredSize();
+        dimension1.width=190;
+        textFieldKey.setPreferredSize(dimension1);
+        textFieldKey.addFocusListener(focusListener);
+        PTextField textFieldValue=new PTextField(valueString);
         Dimension dimension2=textFieldValue.getPreferredSize();
         dimension2.width=190;
         textFieldValue.setPreferredSize(dimension2);
         textFieldValue.addFocusListener(focusListener);
-        CheckBox checkBox=new CheckBox();
-        Button button=new Button(new ImageIcon("icons\\trash.PNG"));
-        panel.add(textFieldHeader);
+        JCheckBox checkBox=new JCheckBox();
+        JButton button=new JButton(new ImageIcon("icons\\trash.PNG"));
+        button.setText(""+headersOfHeaderPanel.size());
+        button.addActionListener(event -> {
+            System.out.println("repeat....................................");
+            if (headersOfHeaderPanel.size() > 1) {
+                headersOfHeaderPanel.remove(Integer.parseInt(button.getText())-2);
+                System.out.println("delete"); //test
+                headerPanel.remove(headersOfHeaderPanel.remove(Integer.parseInt(button.getText())-2));
+                secondPanel.setVisible(false);
+                secondPanel.setVisible(true);
+                // frame.setVisible(false);
+                frame.setVisible(true);
+            }
+        });
+        panel.add(textFieldKey);
         panel.add(textFieldValue);
         panel.add(checkBox);
         panel.add(button);
-        headerPanel.add(panel);
         frame.setVisible(true);
-        int compIndex=headerPanel.getComponentCount();
-        if(compIndex!=1) {
-            System.out.println("comp index: "+compIndex);
-            panelsOfHeaderInSecondPanel.get(selectedRequestIndex).get(compIndex-2).removeAll();
-            PTextField atextFieldHeader=new PTextField("New Header");
-            Dimension adimension1=textFieldHeader.getPreferredSize();
-            dimension1.width=190;
-            atextFieldHeader.setPreferredSize(adimension1);
-            PTextField atextFieldValue=new PTextField("New Value");
-            Dimension adimension2=textFieldValue.getPreferredSize();
-            dimension2.width=190;
-            atextFieldValue.setPreferredSize(adimension2);
-            CheckBox acheckBox=new CheckBox();
-            Button abutton=new Button(new ImageIcon("icons\\trash.PNG"));
-            panelsOfHeaderInSecondPanel.get(selectedRequestIndex).get(compIndex-2).add(atextFieldHeader);
-            panelsOfHeaderInSecondPanel.get(selectedRequestIndex).get(compIndex-2).add(atextFieldValue);
-            panelsOfHeaderInSecondPanel.get(selectedRequestIndex).get(compIndex-2).add(acheckBox);
-            panelsOfHeaderInSecondPanel.get(selectedRequestIndex).get(compIndex-2).add(abutton);
-            panelsOfHeaderInSecondPanel.get(selectedRequestIndex).add(panel);
-        }
-        else{
-            ArrayList<Panel> panelInHeader=new ArrayList<>();
-            panelInHeader.add(panel);
-            panelsOfHeaderInSecondPanel.put(requests.size()-1, panelInHeader);
+        if(headersOfHeaderPanel.size()>1){
+            headersOfHeaderPanel.get(headersOfHeaderPanel.size()-2).removeAll();
+            PTextField aTextFieldKey=new PTextField(keyString);
+            Dimension aDimension1=aTextFieldKey.getPreferredSize();
+            aDimension1.width=190;
+            aTextFieldKey.setPreferredSize(aDimension1);
+            PTextField aTextFieldValue=new PTextField(valueString);
+            Dimension aDimension2=aTextFieldValue.getPreferredSize();
+            aDimension2.width=190;
+            aTextFieldValue.setPreferredSize(aDimension2);
+            JCheckBox aCheckBox=new JCheckBox();
+            JButton aButton=new JButton(new ImageIcon("icons\\trash.PNG"));
+            aButton.setText(""+(headersOfHeaderPanel.size()-1));
+            headersOfHeaderPanel.get(headersOfHeaderPanel.size()-2).add(aTextFieldKey);
+            headersOfHeaderPanel.get(headersOfHeaderPanel.size()-2).add(aTextFieldValue);
+            headersOfHeaderPanel.get(headersOfHeaderPanel.size()-2).add(aCheckBox);
+            headersOfHeaderPanel.get(headersOfHeaderPanel.size()-2).add(aButton);
+            secondPanel.setVisible(false); //test
+            secondPanel.setVisible(true);
+            frame.setVisible(true);
+            aButton.addActionListener(actionEvent -> {
+                System.out.println("repeat....................................");
+                if (headersOfHeaderPanel.size() > 1) {
+                    headersOfHeaderPanel.remove(Integer.parseInt(aButton.getText())-2);
+                    System.out.println("delete number is: "+(Integer.parseInt(aButton.getText())-2)); //test
+                    headerPanel.remove(headersOfHeaderPanel.remove(Integer.parseInt(aButton.getText())-2));
+                    secondPanel.setVisible(false);
+                    secondPanel.setVisible(true);
+                    //frame.setVisible(false);
+                    frame.setVisible(true);
+                }
+            });
         }
     }
 
-    /**
-     *
-     * @return
-     */
-    @NotNull
-    private void createSecondAndThirdPanels(Color color){
-        ArrayList<Panel> savePanelArrayList=new ArrayList<>();
+    private void createSecondPanel(){
         //second panel[
-        Panel secondPanel = new Panel();
+        secondPanel.setBackground(Color.white);
+        secondPanel.setBorder(BorderFactory.createLineBorder(Color.gray));
+        secondPanel.setLayout(new CardLayout());
+        frame.add(secondPanel,BorderLayout.CENTER);
         secondPanel.setLayout(new BorderLayout());
         secondPanel.setBorder(BorderFactory.createLineBorder(Color.gray));
         // second panel -> north[
-        Panel northPanelOfSecondPanel=new Panel();
-        savePanelArrayList.add(northPanelOfSecondPanel); // add 1
+        JPanel northPanelOfSecondPanel=new JPanel();
         northPanelOfSecondPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
-        northPanelOfSecondPanel.setBackground(color);
-        ComboBox typeComboBox=new ComboBox(new String[]{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"});
-        typeComboBox.addActionListener(typeComboBoxEvent->{
-            requests.get(selectedRequestIndex).setType(typeComboBox.getSelectedItem().toString());
-            demoList.setElementAt(typeComboBox.getSelectedItem().toString()+" "+requests.get(selectedRequestIndex).getName(),selectedRequestIndex);
+        northPanelOfSecondPanel.setBackground(themeColor);
+        requestMethodComboBox.addActionListener(typeComboBoxEvent->{
+            arrayListOfRequestObjects.get(selectedRequestIndex).setRequestMethod(requestMethodComboBox.getSelectedItem().toString());
+            demoList.setElementAt(requestMethodComboBox.getSelectedItem().toString()+" "+arrayListOfRequestObjects.get(selectedRequestIndex).getName(),selectedRequestIndex);
             frame.setVisible(true);
         });
-        PTextField URLTextFieldSecondPanel=new PTextField("https://...");
-        Dimension textFieldSecondPanelDimension=URLTextFieldSecondPanel.getPreferredSize();
+        URLTextFiled.addFocusListener(new FocusListener() {
+            @Override
+            public void focusGained(FocusEvent focusEvent) {
+            }
+
+            @Override
+            public void focusLost(FocusEvent focusEvent) {
+                System.out.println("text is: "+URLTextFiled.getText()); //test.......................................
+                arrayListOfRequestObjects.get(selectedRequestIndex).setURL(URLTextFiled.getText());
+            }
+        });
+        Dimension textFieldSecondPanelDimension=URLTextFiled.getPreferredSize();
         textFieldSecondPanelDimension.width=320;
-        URLTextFieldSecondPanel.setPreferredSize(textFieldSecondPanelDimension);
-        Button sendButton=new Button("Send");
-        northPanelOfSecondPanel.add(typeComboBox);
-        northPanelOfSecondPanel.add(URLTextFieldSecondPanel);
+        URLTextFiled.setPreferredSize(textFieldSecondPanelDimension);
+        JButton sendButton=new JButton("Send");
+        northPanelOfSecondPanel.add(requestMethodComboBox);
+        northPanelOfSecondPanel.add(URLTextFiled);
         northPanelOfSecondPanel.add(sendButton);
         secondPanel.add(northPanelOfSecondPanel,BorderLayout.NORTH);
         // second panel -> north]
         // second panel -> center[
-        Panel centerPanelOfSecondPanel=new Panel();
-        someNotImportantPanel.add(centerPanelOfSecondPanel);
+        JPanel centerPanelOfSecondPanel=new JPanel();
+        someUnknownComponent.add(centerPanelOfSecondPanel);
         centerPanelOfSecondPanel.setLayout(new BorderLayout());
-        centerPanelOfSecondPanel.setBackground(color);
-        TabbedPane tabbedPaneOfSecondPanel=new TabbedPane();
-        Panel body=new Panel();
-        savePanelArrayList.add(body); // add 2
-        body.setBackground(color);
-        Panel bodyItem=new Panel();
-        savePanelArrayList.add(bodyItem); // add 3
-        Panel auth=new Panel();
-        savePanelArrayList.add(auth); // add 4
-        auth.setBackground(color);
-        Panel authItem=new Panel();
-        savePanelArrayList.add(authItem); // add 5
-        Panel query=new Panel();
-        savePanelArrayList.add(query); // add 6
-        query.setBackground(color);
-        Panel header=new Panel();
-        savePanelArrayList.add(header); // add 7
-        header.setLayout(new BoxLayout(header, BoxLayout.Y_AXIS));
-        header.setBackground(color);
-        createHeaderComponent(header, color);
-        Panel docs=new Panel();
-        savePanelArrayList.add(docs); // add 8
-        docs.setBackground(color);
-        tabbedPaneOfSecondPanel.add("Body",body);
+        centerPanelOfSecondPanel.setBackground(themeColor);
+        JTabbedPane tabbedPaneOfSecondPanel=new JTabbedPane();
+        bodyPanel.setBackground(themeColor);
+        //createHeaderComponent(bodyPanel, themeColor,"New Key", "New Value",true);
+        someUnknownComponent.add(bodyPanel);
+        JPanel bodyItem=new JPanel();
+        JPanel auth=new JPanel();
+        someUnknownComponent.add(auth);
+        auth.setBackground(themeColor);
+        JPanel authItem=new JPanel();
+        someUnknownComponent.add(queryPanel);
+        queryPanel.setBackground(themeColor);
+        //createHeaderComponent(queryPanel, themeColor,"New Name", "New Value");
+        headerPanel=new JPanel();
+        headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.Y_AXIS));
+        headerPanel.setBackground(themeColor);
+        createHeaderComponent("New Key", "New Value");
+        JPanel docs=new JPanel();
+        someUnknownComponent.add(docs); // add 5
+        docs.setBackground(themeColor);
+        tabbedPaneOfSecondPanel.add("Body",bodyPanel);
         tabbedPaneOfSecondPanel.add("v",bodyItem);
         tabbedPaneOfSecondPanel.add("Auth",auth);
         tabbedPaneOfSecondPanel.add("v",authItem);
-        tabbedPaneOfSecondPanel.add("query",query);
-        tabbedPaneOfSecondPanel.add("header",header);
+        tabbedPaneOfSecondPanel.add("query",queryPanel);
+        tabbedPaneOfSecondPanel.add("header",headerPanel);
         tabbedPaneOfSecondPanel.add("docs",docs);
         centerPanelOfSecondPanel.add(tabbedPaneOfSecondPanel, BorderLayout.NORTH);
         secondPanel.add(centerPanelOfSecondPanel,BorderLayout.CENTER);
         tabbedPaneOfSecondPanel.addChangeListener(changeEvent -> {
             if(tabbedPaneOfSecondPanel.getSelectedIndex()==1){
-                PopupMenu popupMenu = new PopupMenu();
-                MenuItem MultipartForm = new MenuItem("Multipart Form");
-                MenuItem FormURLEncoded = new MenuItem("Form URL Encoded");
-                MenuItem GraphQLQuery = new MenuItem("GraphQL Query");
-                MenuItem JSON = new MenuItem("JSON");
-                MenuItem XML = new MenuItem("XML");
-                MenuItem YAML = new MenuItem("YAML");
-                MenuItem EDN = new MenuItem("EDN");
-                MenuItem BinaryFile = new MenuItem("Binary File");
-                MenuItem noBody = new MenuItem("No Body");
+                JPopupMenu popupMenu = new JPopupMenu();
+                JMenuItem MultipartForm = new JMenuItem("Multipart Form");
+                MultipartForm.addActionListener(e->{
+                    System.out.println("yeeeeee");
+                });
+                JMenuItem FormURLEncoded = new JMenuItem("Form URL Encoded");
+                JMenuItem GraphQLQuery = new JMenuItem("GraphQL Query");
+                JMenuItem JSON = new JMenuItem("JSON");
+                JMenuItem XML = new JMenuItem("XML");
+                JMenuItem YAML = new JMenuItem("YAML");
+                JMenuItem EDN = new JMenuItem("EDN");
+                JMenuItem BinaryFile = new JMenuItem("Binary File");
+                JMenuItem noBody = new JMenuItem("No Body");
                 popupMenu.add("# STRUCTURED ---------"); popupMenu.add(MultipartForm); popupMenu.add(FormURLEncoded); popupMenu.add(GraphQLQuery);
                 popupMenu.add("# TEXT ----------------------"); popupMenu.add(JSON); popupMenu.add(XML); popupMenu.add(YAML); popupMenu.add(EDN);
                 popupMenu.add("# OTHER -------------------"); popupMenu.add(BinaryFile); popupMenu.add(noBody);
@@ -527,17 +590,17 @@ public class Predigest {
                 tabbedPaneOfSecondPanel.setSelectedIndex(0);
             }
             else if(tabbedPaneOfSecondPanel.getSelectedIndex()==3){
-                PopupMenu popupMenu = new PopupMenu();
-                MenuItem basic = new MenuItem("Basic Auth");
-                MenuItem digest = new MenuItem("Digest Auth");
-                MenuItem OAuth1 = new MenuItem("OAuth 1.0");
-                MenuItem OAuth2 = new MenuItem("OAuth 2.0");
-                MenuItem NTLM = new MenuItem("Microsoft NTLM");
-                MenuItem AWS = new MenuItem("AWS IAM v4");
-                MenuItem bearer = new MenuItem("Bearer Token");
-                MenuItem hawk = new MenuItem("Hawk");
-                MenuItem ASAP = new MenuItem("Atlassian ASAP");
-                MenuItem netrc = new MenuItem("Netrc File");
+                JPopupMenu popupMenu = new JPopupMenu();
+                JMenuItem basic = new JMenuItem("Basic Auth");
+                JMenuItem digest = new JMenuItem("Digest Auth");
+                JMenuItem OAuth1 = new JMenuItem("OAuth 1.0");
+                JMenuItem OAuth2 = new JMenuItem("OAuth 2.0");
+                JMenuItem NTLM = new JMenuItem("Microsoft NTLM");
+                JMenuItem AWS = new JMenuItem("AWS IAM v4");
+                JMenuItem bearer = new JMenuItem("Bearer Token");
+                JMenuItem hawk = new JMenuItem("Hawk");
+                JMenuItem ASAP = new JMenuItem("Atlassian ASAP");
+                JMenuItem netrc = new JMenuItem("Netrc File");
                 popupMenu.add(basic); popupMenu.add(digest); popupMenu.add(OAuth1); popupMenu.add(OAuth2); popupMenu.add(NTLM);
                 popupMenu.add(AWS); popupMenu.add(bearer); popupMenu.add(hawk); popupMenu.add(ASAP);
                 popupMenu.add(netrc);
@@ -545,113 +608,118 @@ public class Predigest {
                 tabbedPaneOfSecondPanel.setSelectedIndex(2);
             }
         });
-        secondPanelsOfRequestList.add(secondPanel);
         //second panel]
+    }
+
+    private void createThirdPanel(){
         //third panel[
-        Panel thirdPanel = new Panel();
+        thirdPanel.setBackground(Color.white);
+        thirdPanel.setBorder(BorderFactory.createLineBorder(Color.gray));
+        thirdPanel.setLayout(new CardLayout());
+        frame.add(thirdPanel,BorderLayout.EAST);
         thirdPanel.setLayout(new BorderLayout());
         thirdPanel.setBorder(BorderFactory.createLineBorder(Color.gray));
         Dimension thirdPanelDimension=thirdPanel.getPreferredSize();
         thirdPanelDimension.width=500;
         thirdPanel.setPreferredSize(thirdPanelDimension);
         // third panel -> north[
-        Panel northPanelOfThirdPanel=new Panel();
-        savePanelArrayList.add(northPanelOfThirdPanel); // add 9
+        JPanel northPanelOfThirdPanel=new JPanel();
+        someUnknownComponent.add(northPanelOfThirdPanel);
         northPanelOfThirdPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
-        northPanelOfThirdPanel.setBackground(color);
-        //northPanelOfThirdPanel.setBorder(new Border());
-        Label labelDetailOfThirdPanel=new Label("200 OK  3 s  20 KB");
-        labelDetailOfThirdPanel.setFont(new Font("Serif", Font.ITALIC, 21));
-        labelDetailOfThirdPanel.setForeground(new Color(0,100,0));
-        northPanelOfThirdPanel.add(labelDetailOfThirdPanel);
+        northPanelOfThirdPanel.setBackground(themeColor);
+        detailLabelOfThirdPanel=new JLabel("0 null 0 ms 0 Byte");
+        detailLabelOfThirdPanel.setFont(new Font("Serif", Font.ITALIC, 21));
+        detailLabelOfThirdPanel.setForeground(new Color(0,100,0));
+        northPanelOfThirdPanel.add(detailLabelOfThirdPanel);
         thirdPanel.add(northPanelOfThirdPanel,BorderLayout.NORTH);
         // third panel -> north]
         // third panel -> center[
-        Panel centerPanelOfThirdPanel=new Panel();
-        someNotImportantPanel.add(centerPanelOfThirdPanel);
+        JPanel centerPanelOfThirdPanel=new JPanel();
+        someUnknownComponent.add(centerPanelOfThirdPanel);
         centerPanelOfThirdPanel.setLayout(new BorderLayout());
-        centerPanelOfThirdPanel.setBackground(color);
-        TabbedPane tabbedPaneOfThirdPanel=new TabbedPane();
-        Panel raw=new Panel();
-        savePanelArrayList.add(raw); // add 10
-        raw.setBackground(color);
-        Panel rawItemPanel=new Panel();
-        savePanelArrayList.add(rawItemPanel); // add 11
-        Panel aHeader=new Panel();
-        savePanelArrayList.add(aHeader); // add 12
-        aHeader.setBackground(color);
+        centerPanelOfThirdPanel.setBackground(themeColor);
+        JTabbedPane tabbedPaneOfThirdPanel=new JTabbedPane();
+        raw=new JPanel();
+        someUnknownComponent.add(raw);
+        raw.setBackground(themeColor);
+        JPanel rawItemPanel=new JPanel();
+        JPanel aHeader=new JPanel();
+        someUnknownComponent.add(aHeader); // add 8
+        aHeader.setBackground(themeColor);
         aHeader.setLayout(new BorderLayout());
-        Panel cookie=new Panel();
-        savePanelArrayList.add(cookie); // add 13
-        cookie.setBackground(color);
-        Panel timeLine=new Panel();
-        savePanelArrayList.add(timeLine); // add 14
-        timeLine.setBackground(color);
+        JPanel cookie=new JPanel();
+        someUnknownComponent.add(cookie); // add 9
+        cookie.setBackground(themeColor);
+        JPanel timeLine=new JPanel();
+        someUnknownComponent.add(timeLine); // add 10
+        timeLine.setBackground(themeColor);
         tabbedPaneOfThirdPanel.add("Raw",raw);
         tabbedPaneOfThirdPanel.add("v",rawItemPanel);
         tabbedPaneOfThirdPanel.add("Header",aHeader);
+        JPanel finalAHeader = aHeader;
         tabbedPaneOfThirdPanel.addChangeListener(event->{
             if(tabbedPaneOfThirdPanel.getSelectedIndex()==1){
-                PopupMenu popupMenu = new PopupMenu();
-                MenuItem rawItem = new MenuItem("Raw");
-                MenuItem jsonItem = new MenuItem("JSON");
-                popupMenu.add(rawItem); popupMenu.add(jsonItem);
+                JPopupMenu popupMenu = new JPopupMenu();
+                JMenuItem rawItem = new JMenuItem("Raw");
+                JMenuItem previewItem=new JMenuItem("Preview");
+                JMenuItem jsonItem = new JMenuItem("JSON");
+                popupMenu.add(rawItem); popupMenu.add(previewItem); popupMenu.add(jsonItem);
                 popupMenu.show(frame , 703, 180);
                 tabbedPaneOfThirdPanel.setSelectedIndex(0);
             }
             if(tabbedPaneOfThirdPanel.getSelectedIndex()==2){
-                Panel centerHeader=new Panel();
+                JPanel centerHeader=new JPanel();
                 centerHeader.setLayout(new GridLayout(9,2));
-                centerHeader.setBackground(color);
-                someNotImportantPanel.add(centerHeader);
-                centerHeader.add((new Label(" NAME")));
-                Label name=new Label(" null");
+                centerHeader.setBackground(themeColor);
+                someUnknownComponent.add(centerHeader);
+                centerHeader.add((new JLabel(" NAME")));
+                JLabel name=new JLabel(" null");
                 labelsOfHeaderInThirdPanel.add(name);
                 centerHeader.add(name);
 
-                centerHeader.add(new Label(" Server"));
-                Label server=new Label(" null");
+                centerHeader.add(new JLabel(" Server"));
+                JLabel server=new JLabel(" null");
                 labelsOfHeaderInThirdPanel.add(server);
                 centerHeader.add(server);
 
-                centerHeader.add(new Label(" Date"));
-                Label date=new Label(" null");
+                centerHeader.add(new JLabel(" Date"));
+                JLabel date=new JLabel(" null");
                 labelsOfHeaderInThirdPanel.add(date);
                 centerHeader.add(date);
 
-                centerHeader.add(new Label(" Content-Type"));
-                Label contentType=new Label(" null");
+                centerHeader.add(new JLabel(" Content-Type"));
+                JLabel contentType=new JLabel(" null");
                 labelsOfHeaderInThirdPanel.add(contentType);
                 centerHeader.add(contentType);
 
-                centerHeader.add(new Label(" Content-Length"));
-                Label contentLength=new Label(" null");
+                centerHeader.add(new JLabel(" Content-Length"));
+                JLabel contentLength=new JLabel(" null");
                 labelsOfHeaderInThirdPanel.add(contentLength);
                 centerHeader.add(contentLength);
 
-                centerHeader.add(new Label(" Connection"));
-                Label connection=new Label(" null");
+                centerHeader.add(new JLabel(" Connection"));
+                JLabel connection=new JLabel(" null");
                 labelsOfHeaderInThirdPanel.add(connection);
                 centerHeader.add(connection);
 
-                centerHeader.add(new Label(" Last-Modified"));
-                Label lastModified=new Label(" null");
+                centerHeader.add(new JLabel(" Last-Modified"));
+                JLabel lastModified=new JLabel(" null");
                 labelsOfHeaderInThirdPanel.add(lastModified);
                 centerHeader.add(lastModified);
 
-                centerHeader.add(new Label(" ETag"));
-                Label ETag=new Label(" null");
+                centerHeader.add(new JLabel(" ETag"));
+                JLabel ETag=new JLabel(" null");
                 labelsOfHeaderInThirdPanel.add(ETag);
                 centerHeader.add(ETag);
 
-                centerHeader.add(new Label(" Accept-Ranges"));
-                Label acceptRanges=new Label(" null");
+                centerHeader.add(new JLabel(" Accept-Ranges"));
+                JLabel acceptRanges=new JLabel(" null");
                 labelsOfHeaderInThirdPanel.add(acceptRanges);
                 centerHeader.add(acceptRanges);
 
-                aHeader.add(centerHeader, BorderLayout.CENTER);
+                finalAHeader.add(centerHeader, BorderLayout.CENTER);
 
-                Button copyButton=new Button("Copy to clipboard");
+                JButton copyButton=new JButton("Copy to clipboard");
                 copyButton.addActionListener(CBEvent->{
                     StringSelection stringSelection=new StringSelection("Name: "+name.getText()+"\nServer: "+
                             server.getText()+"\nDate: "+date.getText()+"\nContent-Type: "+contentType.getText()+
@@ -661,7 +729,7 @@ public class Predigest {
                     Clipboard clipboard= Toolkit.getDefaultToolkit().getSystemClipboard();
                     clipboard.setContents(stringSelection,null);
                 });
-                aHeader.add(copyButton, BorderLayout.SOUTH);
+                finalAHeader.add(copyButton, BorderLayout.SOUTH);
             }
         });
         tabbedPaneOfThirdPanel.add("Cookie",cookie);
@@ -669,36 +737,91 @@ public class Predigest {
         centerPanelOfThirdPanel.add(tabbedPaneOfThirdPanel);
         thirdPanel.add(centerPanelOfThirdPanel,BorderLayout.CENTER);
         // third panel -> center]
-        thirdPanelsOfRequestList.add(thirdPanel);
         //third panel]
-        panelNeedToSave.put(requests.size()-1,savePanelArrayList);
     }
 
-    private void darkLight(){
 
-    }
     /**
      * This class implement "ActionListener" class for action of buttons.
      */
     private class buttonActionListener implements ActionListener {
         @Override
-        public void actionPerformed(ActionEvent actionEvent) {
+        public void actionPerformed(@NotNull ActionEvent actionEvent) {
             if(actionEvent.getSource().equals(plusButtonOfFirstPanel)){
-                plusButtonAction(themeColor);
+                plusButtonAction();
             }
         }
     }
 
-    private void save(int numberOfRequest) throws IOException {
-        try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream("save\\requests\\"+ numberOfRequest + ".txt"))) {
-            objectOutputStream.writeObject(requests.get(numberOfRequest));
+    private void save() {
+        // config
+        try(FileWriter fileWriter=new FileWriter("save\\config.src")){
+            fileWriter.write(""+followRedirect.isSelected()+" "+exitType.isSelected()+" "+darkTheme.isSelected()+" "
+                    +stateOfFirstPanel+" "+frame.getSize().width+" "+frame.getSize().height);
+        } catch (FileNotFoundException e) {
+            System.out.println("saving process failed. File not founded!"); //change to dialog massage
+            e.printStackTrace();
+        } catch (IOException e) {
+            System.out.println("saving process failed!"); //change to dialog massage
+            e.printStackTrace();
         }
-        try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream("save\\secondPanels\\"+ numberOfRequest + ".txt"));ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream("save\\secondPanels\\"+ numberOfRequest + ".txt"))) {
-            objectOutputStream.writeObject(secondPanelsOfRequestList.get(numberOfRequest));
+        // other
+        try(ObjectOutputStream objectOutputStream=new ObjectOutputStream(new FileOutputStream("save\\hashMap.src"))){
+            objectOutputStream.writeObject(arrayListOfRequestObjects);
+        } catch (FileNotFoundException e) {
+            System.out.println("saving process failed. File not founded!"); //change to dialog massage
+            e.printStackTrace();
+        } catch (IOException e) {
+            System.out.println("saving process failed!"); //change to dialog massage
+            e.printStackTrace();
+        }
+    }
 
+    /**
+     * This method find .ser file in a folder.
+     * @return these file as array
+     */
+    private File[] serFormatFileFinder(String path){
+        File dir = new File(path);
+        return dir.listFiles((dir1, filename) -> filename.endsWith(".src"));
+    }
+
+    private boolean stringToBoolean(String string){
+        return string.equals("true");
+    }
+
+    private void load(){
+        // config
+        try(FileReader fileReader=new FileReader("save\\config.src"); Scanner scanner=new Scanner(fileReader)) {
+            followRedirect.setSelected(stringToBoolean(scanner.next()));
+            exitType.setSelected(stringToBoolean(scanner.next()));
+            darkTheme.setSelected(stringToBoolean(scanner.next()));
+            if(darkTheme.isSelected()) themeColor=new Color(50,50,50);
+            stateOfFirstPanel=(stringToBoolean(scanner.next()));
+            frame.setSize(scanner.nextInt(),scanner.nextInt());
+        } catch (FileNotFoundException e) {
+            System.out.println("loading process failed. File not founded!"); //change to dialog massage
+            e.printStackTrace();
+        } catch (IOException e) {
+            System.out.println("loading process failed!"); //change to dialog massage
+            e.printStackTrace();
         }
-        try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream("save\\thirdPanels\\"+ numberOfRequest + ".txt"))) {
-            objectOutputStream.writeObject(thirdPanelsOfRequestList.get(numberOfRequest));
+        // other
+        try(ObjectInputStream objectInputStream=new ObjectInputStream(new FileInputStream("save\\hashMap.src"))){
+            arrayListOfRequestObjects=(ArrayList<Request>) objectInputStream.readObject();
+        } catch (ClassNotFoundException e){
+            System.out.println("loading process failed. Class not founded!"); //change to dialog massage
+            e.printStackTrace();
+        } catch (FileNotFoundException e) {
+            System.out.println("loading process failed. File not founded!"); //change to dialog massage
+            e.printStackTrace();
+        } catch (IOException e) {
+            System.out.println("loading process failed!"); //change to dialog massage
+            e.printStackTrace();
+        }
+        for(Request request:arrayListOfRequestObjects){
+            demoList.addElement(request.getRequestMethod()+" "+request.getName());
+            System.out.println(request.getRequestMethod()+" "+request.getName());
         }
     }
 
@@ -730,43 +853,4 @@ class PTextField extends JTextField implements Serializable {
         });
 
     }
-}
-
-class TabbedPane extends JTabbedPane implements Serializable{
-}
-
-class PopupMenu extends JPopupMenu implements Serializable{
-}
-
-class CheckBox extends JCheckBox implements Serializable{
-}
-
-class MenuItem extends JMenuItem implements Serializable{
-    public MenuItem(String string){
-        super(string);
-    }
-}
-
-class ComboBox extends JComboBox implements Serializable{
-    public ComboBox(String[] arrayOfString){
-        super(arrayOfString);
-    }
-}
-
-class Button extends JButton implements Serializable {
-    public Button(String text){
-        super(text);
-    }
-    public Button(ImageIcon imageIcon){
-        super(imageIcon);
-    }
-}
-
-class Label extends JLabel implements Serializable {
-    public Label(String string){
-        super(string);
-    }
-}
-
-class Panel extends JPanel implements Serializable{
 }
