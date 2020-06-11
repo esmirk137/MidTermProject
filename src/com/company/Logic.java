@@ -313,9 +313,19 @@ public class Logic {
     /**
      * Do task of command "-O" or "--output" and show requests of list.
      * Save response body in a html file.
+     * @param request is current request
+     * @param isFaz3 show this method run from faz 2 or 3
      */
-    private void saveResponseBody(@NotNull Request request){
-        try(BufferedWriter bufferedWriter=new BufferedWriter(new FileWriter("saveFaz2\\bodyResponse\\"+fileName+".txt"))){
+    public void saveResponseBody(@NotNull Request request, boolean isFaz3, boolean isPng){
+        if(isFaz3) {
+            if (isPng) {
+                fileName = "picture.png";
+            }
+            else {
+                fileName = "picture.jpg";
+            }
+        }
+        try(BufferedWriter bufferedWriter=new BufferedWriter(new FileWriter("saveFaz2\\bodyResponse\\"+fileName))){
             bufferedWriter.write(request.getResponseBody());
             System.out.println("Response body saved.");
         } catch (FileNotFoundException e) {
@@ -388,11 +398,14 @@ public class Logic {
                 //e.printStackTrace();
                 System.out.print("IOException...!: "+e);
             }
+            System.out.println(stringBuilder);
+            request.setResponseHeaders(hashMap);
+            request.setResponseCode(connection.getResponseCode());
+            request.setResponseMassage(connection.getResponseMessage());
             request.setResponseBody(stringBuilder.toString());
-            System.out.println(stringBuilder.toString());
-            long length = connection.getContentLengthLong();
-            if (length == -1) length = 0;
-            System.out.println("Length: " + length + " byte");
+            long length=connection.getContentLengthLong();
+            if(length==-1) length=0;
+            System.out.println("Length: "+length+" byte");
         } catch (ProtocolException e) {
             System.out.println("Protocol exception...!");
         } catch (MalformedURLException e) {
@@ -407,7 +420,7 @@ public class Logic {
      * @param body is body of request
      * @param boundary is a custom boundary
      * @param bufferedOutputStream is buffered out put stream of http url connection
-     * @throws IOException is a main exception related to input and out exception.
+     * @throws IOException is a main exception related to input and out exception
      */
     private void bufferOutFormData(@NotNull HashMap<String, String> body, String boundary, BufferedOutputStream bufferedOutputStream) throws IOException {
         for (String key : body.keySet()) {
@@ -432,8 +445,10 @@ public class Logic {
         bufferedOutputStream.close();
     }
 
+
     /**
      * This method is implementing of "POST" method for request.
+     * @param request is current request
      */
     private void POST(Request request){
         if(massageBodyType.equals("multipart form")){
@@ -469,6 +484,13 @@ public class Logic {
                     System.out.println("IOException...!");
                 }
                 System.out.println(stringBuilder);
+                request.setResponseHeaders(hashMap);
+                request.setResponseCode(connection.getResponseCode());
+                request.setResponseMassage(connection.getResponseMessage());
+                request.setResponseBody(stringBuilder.toString());
+                long length=connection.getContentLengthLong();
+                if(length==-1) length=0;
+                System.out.println("Length: "+length+" byte");
             } catch (ProtocolException e) {
                 System.out.println("Protocol exception...!");
             } catch (IOException e) {
@@ -525,6 +547,13 @@ public class Logic {
                     System.out.println("IOException...!"+e);
                 }
                 System.out.println(stringBuilder);
+                request.setResponseHeaders(hashMap);
+                request.setResponseCode(connection.getResponseCode());
+                request.setResponseMassage(connection.getResponseMessage());
+                request.setResponseBody(stringBuilder.toString());
+                long length=connection.getContentLengthLong();
+                if(length==-1) length=0;
+                System.out.println("Length: "+length+" byte");
             } catch (ProtocolException e) {
                 System.out.println("Protocol exception...!");
             } catch (IOException e) {
@@ -570,7 +599,7 @@ public class Logic {
                 request.setResponseHeaders(hashMap);
                 request.setResponseCode(connection.getResponseCode());
                 request.setResponseMassage(connection.getResponseMessage());
-                request.setResponseBody(new String(bufferedInputStream.readAllBytes()));
+                request.setResponseBody(stringBuilder.toString());
                 System.out.println(new String(bufferedInputStream.readAllBytes()));
                 long length=connection.getContentLengthLong();
                 if(length==-1) length=0;
@@ -585,6 +614,7 @@ public class Logic {
 
     /**
      * This method is implementing of "PUT" method for request.
+     * @param request is current request
      */
     private void PUT(Request request){
         if(massageBodyType.equals("multipart form")){
@@ -620,6 +650,13 @@ public class Logic {
                     System.out.println("IOException...!");
                 }
                 System.out.println(stringBuilder);
+                request.setResponseHeaders(hashMap);
+                request.setResponseCode(connection.getResponseCode());
+                request.setResponseMassage(connection.getResponseMessage());
+                request.setResponseBody(stringBuilder.toString());
+                long length=connection.getContentLengthLong();
+                if(length==-1) length=0;
+                System.out.println("Length: "+length+" byte");
             } catch (ProtocolException e) {
                 System.out.println("Protocol exception...!");
             } catch (IOException e) {
@@ -676,6 +713,13 @@ public class Logic {
                     System.out.println("IOException...!"+e);
                 }
                 System.out.println(stringBuilder);
+                request.setResponseHeaders(hashMap);
+                request.setResponseCode(connection.getResponseCode());
+                request.setResponseMassage(connection.getResponseMessage());
+                request.setResponseBody(stringBuilder.toString());
+                long length=connection.getContentLengthLong();
+                if(length==-1) length=0;
+                System.out.println("Length: "+length+" byte");
             } catch (ProtocolException e) {
                 System.out.println("Protocol exception...!");
             } catch (IOException e) {
@@ -721,7 +765,7 @@ public class Logic {
                 request.setResponseHeaders(hashMap);
                 request.setResponseCode(connection.getResponseCode());
                 request.setResponseMassage(connection.getResponseMessage());
-                request.setResponseBody(new String(bufferedInputStream.readAllBytes()));
+                request.setResponseBody(stringBuilder.toString());
                 System.out.println(new String(bufferedInputStream.readAllBytes()));
                 long length=connection.getContentLengthLong();
                 if(length==-1) length=0;
@@ -743,6 +787,8 @@ public class Logic {
 
     /**
      * This method is implementing of "DELETE" method for request.
+     * @param request is current request
+     * @throws IOException is a main exception related to input and out exception
      */
     private void DELETE(Request request) throws IOException {
         URL url = new URL("http://"+arrayList.get(0));
@@ -762,7 +808,14 @@ public class Logic {
                 System.out.println(connection.getHeaderFieldKey(i) + ": " + connection.getHeaderField(i));
             }
         }
+       // System.out.println(stringBuilder);
         request.setResponseHeaders(hashMap);
+        request.setResponseCode(connection.getResponseCode());
+        request.setResponseMassage(connection.getResponseMessage());
+        //request.setResponseBody(stringBuilder.toString());
+        long length=connection.getContentLengthLong();
+        if(length==-1) length=0;
+        System.out.println("Length: "+length+" byte");
     }
 
     /**
@@ -779,10 +832,10 @@ public class Logic {
         //abstract
     }
 
-
     /**
      * This method choose method request or handle them.
      * @param request is current request
+     * @throws IOException is a main exception related to input and out exception
      */
     private void send(Request request) throws IOException {
         if(request.isHasSave()) {
@@ -805,7 +858,7 @@ public class Logic {
                 System.out.println("Unknown method...!");
         }
         if(request.isHasResponseBodySave()){
-            saveResponseBody(request);
+            saveResponseBody(request,false, true);
         }
     }
 }

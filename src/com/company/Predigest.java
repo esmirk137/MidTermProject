@@ -9,6 +9,7 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.event.*;
 import java.io.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Scanner;
 
 /**
@@ -30,6 +31,8 @@ public class Predigest {
     private JList jListOfRequest;
     private ArrayList<Request> arrayListOfRequestObjects;
     private int selectedRequestIndex;
+    private int pastSelectedRequestIndex;
+    private boolean firstt;
 
     private JPanel secondPanel;
     private JComboBox requestMethodComboBox;
@@ -37,9 +40,10 @@ public class Predigest {
     private JPanel bodyPanel;
     private JPanel headerPanel;
     private JPanel queryPanel;
-    private ArrayList<JPanel> dataFormMassageBody;
-    private ArrayList<JPanel> headersOfHeaderPanel;
-    private ArrayList<JPanel> queriesOfHeaderPanel;
+    private ArrayList<JPanel> panelsOfDataFormBody;
+    private ArrayList<JButton> trashOfDataFormBody;
+    private ArrayList<JPanel> panelsOfHeaderPanel;
+    private ArrayList<JButton> trashOfHeader;
 
     private JPanel thirdPanel;
     private JPanel raw;
@@ -48,11 +52,10 @@ public class Predigest {
 
     private ArrayList<JComponent> someUnknownComponent;
 
+    private Logic logic;
 
     /**
-     * This is constructor of this class and allocate fields and make main frame.
-     * ??????????????????????//
-     * ?????????????
+     * This is constructor of this class and allocate fields and make main frame with all detail.
      */
     public Predigest(){
         //initialization[
@@ -87,9 +90,12 @@ public class Predigest {
         bodyPanel=new JPanel();
         headerPanel=new JPanel();
         queryPanel=new JPanel();
-        dataFormMassageBody=new ArrayList<>();
-        headersOfHeaderPanel=new ArrayList<>();
-        queriesOfHeaderPanel=new ArrayList<>();
+        panelsOfDataFormBody=new ArrayList<>();
+        trashOfDataFormBody=new ArrayList<>();
+        panelsOfHeaderPanel=new ArrayList<>();
+        trashOfHeader=new ArrayList<>();
+        firstt=true;
+        //queriesOfHeaderPanel=new ArrayList<>();
 
         thirdPanel = new JPanel();
         raw=new JPanel();
@@ -97,6 +103,8 @@ public class Predigest {
         labelsOfHeaderInThirdPanel=new ArrayList<>();
 
         someUnknownComponent=new ArrayList<>();
+
+        logic=new Logic();
         //initialization]
 
         //frame[
@@ -194,14 +202,14 @@ public class Predigest {
             if (darkTheme.isSelected()) {
                 themeColor=new Color(50,50,50);
                 for(int i=0; i<arrayListOfRequestObjects.size(); i++) {
-                    for(JPanel panel: headersOfHeaderPanel)
+                    for(JPanel panel: panelsOfHeaderPanel)
                         panel.setBackground(themeColor);
                 }
                 for (JComponent component : someUnknownComponent) component.setBackground(themeColor);
             } else {
                 themeColor=new Color(255,255,255);
                 for(int i=0; i<arrayListOfRequestObjects.size(); i++) {
-                    for(JPanel panel: headersOfHeaderPanel)
+                    for(JPanel panel: panelsOfHeaderPanel)
                         panel.setBackground(themeColor);
                 }
                 for (JComponent component : someUnknownComponent) component.setBackground(themeColor);
@@ -291,6 +299,9 @@ public class Predigest {
         // frame menu bar]
     }
 
+    /**
+     * This method create first panel of frame (the panel that is in the left side).
+     */
     private void createFirstPanel(){
         // first panel[
         firstPanel.setLayout(new BorderLayout());
@@ -331,35 +342,62 @@ public class Predigest {
         centerPanelOfFirstPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
         jListOfRequest.addListSelectionListener(event -> {
             if (!event.getValueIsAdjusting()) {
-                //System.out.println("change........."); //test...............................................
+                if(arrayListOfRequestObjects.size()>1){
+                    //past request
+                    //save url
+                    arrayListOfRequestObjects.get(pastSelectedRequestIndex).setURL(URLTextFiled.getText());
+                    //save input headers
+                    HashMap<String,String> hashMapH=new HashMap<>();
+                    for(JPanel panel:panelsOfHeaderPanel){
+                        if(((JTextField)panel.getComponent(0)).getText().equals("")) continue;
+                        System.out.println(((JTextField)panel.getComponent(0)).getText());
+                        hashMapH.put(((JTextField)panel.getComponent(0)).getText(),((JTextField)panel.getComponent(1)).getText());
+                    }
+                    arrayListOfRequestObjects.get(pastSelectedRequestIndex).setHeaders(hashMapH);
+                    panelsOfHeaderPanel.clear();
+                    headerPanel.removeAll();
+                    trashOfHeader.clear();
+                    //save data form body
+                    HashMap<String,String> hashMapB=new HashMap<>();
+                    for(JPanel panel:panelsOfDataFormBody){
+                        hashMapB.put(((JTextField)panel.getComponent(0)).getText(),((JTextField)panel.getComponent(1)).getText());
+                    }
+                    arrayListOfRequestObjects.get(pastSelectedRequestIndex).setMassageBodyFormData(hashMapB);
+                    panelsOfDataFormBody.clear();
+                    bodyPanel.removeAll();
+                    trashOfDataFormBody.clear();
+                }
                 selectedRequestIndex = jListOfRequest.getSelectedIndex();
-                //System.out.println("Selected index is: "+selectedRequestIndex); //test...............................................
                 Request request = arrayListOfRequestObjects.get(selectedRequestIndex);
 
                 frame.setVisible(true);
                 //set request method to combo box
-                //System.out.println("method is: "+arrayListOfRequestObjects.get(selectedRequestIndex).getRequestMethod()); //test...............................................
                 requestMethodComboBox.setSelectedItem(arrayListOfRequestObjects.get(selectedRequestIndex).getRequestMethod());
                 //set url on textfield
                 URLTextFiled.setText(request.getURL());
                 //set headers
                 if (request.getHeaders().size() != 0) {
                     for (String key : request.getHeaders().keySet()) {
-                        createHeaderComponent(key, request.getHeaders().get(key));
+                        createHeaderComponentWithoutAction(key, request.getHeaders().get(key));
                     }
+                    createHeaderComponentWithAction();
                 }
-                //set response header
+                else if(headerPanel.getComponentCount()==0){
+                    createHeaderComponent();
+                }
+                //set massage body data form
+                if (request.getMassageBodyFormData().size() != 0) {
+                    for (String key : request.getMassageBodyFormData().keySet()) {
+                        createHeaderComponentWithoutAction(key, request.getMassageBodyFormData().get(key));
+                    }
 
-                //setMassageBody
-                if (request.getMassageBodyType().equals("multipart form")) {
-                    if (request.getMassageBodyFormData().size() != 0) {
-                        for (String key : request.getMassageBodyFormData().keySet()) {
-                            // createHeaderComponent(bodyPanel, themeColor, key, request.getMassageBodyFormData().get(key),true);
-                        }
-                    }
-                } else {
-                    //Json
                 }
+                else if(headerPanel.getComponentCount()==0){
+                    createHeaderComponent();
+                }
+                //set response header: in his panel with action we do that
+                //set Massage Body response: : in his panel with action we do that
+
                 //set detail
                 detailLabelOfThirdPanel.setText(request.getResponseCode() + " " + request.getResponseMassage() + "  " + request.getTime() + " ms   " + request.getLength() + " byte");
                 secondPanel.setVisible(false);
@@ -367,6 +405,7 @@ public class Predigest {
                 thirdPanel.setVisible(false);
                 thirdPanel.setVisible(true);
                 frame.setVisible(true);
+                pastSelectedRequestIndex=jListOfRequest.getSelectedIndex();
             }
         });
         firstPanel.add(jListOfRequest, BorderLayout.CENTER);
@@ -418,11 +457,42 @@ public class Predigest {
         });
     }
 
-    private void createHeaderComponent(String keyString, String valueString){
+    /**
+     * This method create a panel include two text field and one check box and one trash button with focuse
+     * @param keyString is key of header
+     * @param valueString is value of header
+     */
+    private void createHeaderComponentWithoutAction(String keyString, String valueString){
         JPanel panel=new JPanel();
         panel.setBackground(themeColor);
         headerPanel.add(panel);
-        headersOfHeaderPanel.add(panel);
+        panelsOfHeaderPanel.add(panel);
+        JTextField textFieldKey=new JTextField(keyString);
+        Dimension dimension1=textFieldKey.getPreferredSize();
+        dimension1.width=190;
+        textFieldKey.setPreferredSize(dimension1);
+        JTextField textFieldValue=new JTextField(valueString);
+        Dimension dimension2=textFieldValue.getPreferredSize();
+        dimension2.width=190;
+        textFieldValue.setPreferredSize(dimension2);
+        JCheckBox checkBox=new JCheckBox();
+        JButton button=new JButton(new ImageIcon("icons\\trash.PNG"));
+        trashOfHeader.add(button);
+        panel.add(textFieldKey);
+        panel.add(textFieldValue);
+        panel.add(checkBox);
+        panel.add(button);
+        frame.setVisible(true);
+    }
+
+    /**
+     * This method create a panel include two text field with focusListener and one check box and one trash button.
+     */
+    private void createHeaderComponentWithAction(){
+        JPanel panel=new JPanel();
+        panel.setBackground(themeColor);
+        headerPanel.add(panel);
+        panelsOfHeaderPanel.add(panel);
         //FocusListener
         FocusListener focusListener=new FocusListener() {
             @Override
@@ -430,74 +500,122 @@ public class Predigest {
             }
             @Override
             public void focusGained(FocusEvent e) {
-                createHeaderComponent( "New Key","New Value");
+                createHeaderComponent( );
             }
         };
-        PTextField textFieldKey=new PTextField(keyString);
+        JTextField textFieldKey=new JTextField();
         Dimension dimension1=textFieldKey.getPreferredSize();
         dimension1.width=190;
         textFieldKey.setPreferredSize(dimension1);
         textFieldKey.addFocusListener(focusListener);
-        PTextField textFieldValue=new PTextField(valueString);
+        JTextField textFieldValue=new JTextField();
         Dimension dimension2=textFieldValue.getPreferredSize();
         dimension2.width=190;
         textFieldValue.setPreferredSize(dimension2);
         textFieldValue.addFocusListener(focusListener);
         JCheckBox checkBox=new JCheckBox();
         JButton button=new JButton(new ImageIcon("icons\\trash.PNG"));
-        button.setText(""+headersOfHeaderPanel.size());
-        button.addActionListener(event -> {
-            System.out.println("repeat....................................");
-            if (headersOfHeaderPanel.size() > 1) {
-                headersOfHeaderPanel.remove(Integer.parseInt(button.getText())-2);
-                System.out.println("delete"); //test
-                headerPanel.remove(headersOfHeaderPanel.remove(Integer.parseInt(button.getText())-2));
-                secondPanel.setVisible(false);
-                secondPanel.setVisible(true);
-                // frame.setVisible(false);
-                frame.setVisible(true);
-            }
-        });
+        trashOfHeader.add(button);
         panel.add(textFieldKey);
         panel.add(textFieldValue);
         panel.add(checkBox);
         panel.add(button);
         frame.setVisible(true);
-        if(headersOfHeaderPanel.size()>1){
-            headersOfHeaderPanel.get(headersOfHeaderPanel.size()-2).removeAll();
-            PTextField aTextFieldKey=new PTextField(keyString);
+    }
+
+    /**
+     * This method create header component with two upper method.
+     */
+    private void createHeaderComponent(){
+        JPanel panel=new JPanel();
+        panel.setBackground(themeColor);
+        headerPanel.add(panel);
+        panelsOfHeaderPanel.add(panel);
+        //FocusListener
+        FocusListener focusListener=new FocusListener() {
+            @Override
+            public void focusLost(FocusEvent e) {
+            }
+            @Override
+            public void focusGained(FocusEvent e) {
+                createHeaderComponent();
+            }
+        };
+        JTextField textFieldKey=new JTextField();
+        Dimension dimension1=textFieldKey.getPreferredSize();
+        dimension1.width=190;
+        textFieldKey.setPreferredSize(dimension1);
+        textFieldKey.addFocusListener(focusListener);
+        JTextField textFieldValue=new JTextField();
+        Dimension dimension2=textFieldValue.getPreferredSize();
+        dimension2.width=190;
+        textFieldValue.setPreferredSize(dimension2);
+        textFieldValue.addFocusListener(focusListener);
+        JCheckBox checkBox=new JCheckBox();
+        JButton button=new JButton(new ImageIcon("icons\\trash.PNG"));
+        trashOfHeader.add(button);
+        panel.add(textFieldKey);
+        panel.add(textFieldValue);
+        panel.add(checkBox);
+        panel.add(button);
+        frame.setVisible(true);
+        if(panelsOfHeaderPanel.size()>1){
+            System.out.println("new................................................");
+            panelsOfHeaderPanel.get(panelsOfHeaderPanel.size()-2).remove(0);
+            panelsOfHeaderPanel.get(panelsOfHeaderPanel.size()-2).remove(0);
+            JTextField aTextFieldKey=new JTextField();
             Dimension aDimension1=aTextFieldKey.getPreferredSize();
             aDimension1.width=190;
             aTextFieldKey.setPreferredSize(aDimension1);
-            PTextField aTextFieldValue=new PTextField(valueString);
+            JTextField aTextFieldValue=new JTextField();
             Dimension aDimension2=aTextFieldValue.getPreferredSize();
             aDimension2.width=190;
             aTextFieldValue.setPreferredSize(aDimension2);
-            JCheckBox aCheckBox=new JCheckBox();
-            JButton aButton=new JButton(new ImageIcon("icons\\trash.PNG"));
-            aButton.setText(""+(headersOfHeaderPanel.size()-1));
-            headersOfHeaderPanel.get(headersOfHeaderPanel.size()-2).add(aTextFieldKey);
-            headersOfHeaderPanel.get(headersOfHeaderPanel.size()-2).add(aTextFieldValue);
-            headersOfHeaderPanel.get(headersOfHeaderPanel.size()-2).add(aCheckBox);
-            headersOfHeaderPanel.get(headersOfHeaderPanel.size()-2).add(aButton);
+            panelsOfHeaderPanel.get(panelsOfHeaderPanel.size()-2).add(aTextFieldValue,0);
+            panelsOfHeaderPanel.get(panelsOfHeaderPanel.size()-2).add(aTextFieldKey,0);
             secondPanel.setVisible(false); //test
             secondPanel.setVisible(true);
             frame.setVisible(true);
-            aButton.addActionListener(actionEvent -> {
-                System.out.println("repeat....................................");
-                if (headersOfHeaderPanel.size() > 1) {
-                    headersOfHeaderPanel.remove(Integer.parseInt(aButton.getText())-2);
-                    System.out.println("delete number is: "+(Integer.parseInt(aButton.getText())-2)); //test
-                    headerPanel.remove(headersOfHeaderPanel.remove(Integer.parseInt(aButton.getText())-2));
+        }
+        for(int i=0; i<trashOfHeader.size(); i++){
+            int finalI = i;
+            trashOfHeader.get(i).addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent actionEvent) {
+                    //System.out.println("DELETE");
+                    //System.out.println("final i-1 is: "+(finalI)+".............................");
+                    headerPanel.remove(finalI);
+                    panelsOfHeaderPanel.remove(finalI);
+                    trashOfHeader.remove(finalI);
+                    HashMap<String,String> hashMapH=new HashMap<>();
+                    for(JPanel jPanel:panelsOfHeaderPanel){
+                        if(((JTextField)jPanel.getComponent(0)).getText().equals("") && ((JTextField)jPanel.getComponent(1)).getText().equals("")) continue;
+                        //System.out.println("key: "+((JTextField)jPanel.getComponent(0)).getText()+".........................");
+                        //System.out.println("value: "+((JTextField)jPanel.getComponent(1)).getText()+".........................");
+                        hashMapH.put(((JTextField)jPanel.getComponent(0)).getText(),((JTextField)jPanel.getComponent(1)).getText());
+                    }
+                    arrayListOfRequestObjects.get(selectedRequestIndex).setHeaders(hashMapH);
+                    headerPanel.removeAll();
+                    panelsOfHeaderPanel.clear();
+                    trashOfHeader.clear();
+                    //System.out.println("create headers");
+                    for (String key : arrayListOfRequestObjects.get(selectedRequestIndex).getHeaders().keySet()) {
+                        //System.out.println("key: "+key+".........................");
+                        //System.out.println("value: "+arrayListOfRequestObjects.get(selectedRequestIndex).getHeaders().get(key)+".........................");
+                        createHeaderComponentWithoutAction(key,arrayListOfRequestObjects.get(selectedRequestIndex).getHeaders().get(key));
+                    }
+                    createHeaderComponentWithAction();
                     secondPanel.setVisible(false);
                     secondPanel.setVisible(true);
-                    //frame.setVisible(false);
                     frame.setVisible(true);
                 }
             });
         }
     }
 
+    /**
+     * This method create second panel of frame (panel that is in the center).
+     */
     private void createSecondPanel(){
         //second panel[
         secondPanel.setBackground(Color.white);
@@ -522,7 +640,7 @@ public class Predigest {
 
             @Override
             public void focusLost(FocusEvent focusEvent) {
-                System.out.println("text is: "+URLTextFiled.getText()); //test.......................................
+                //System.out.println("text is: "+URLTextFiled.getText()); //test.......................................
                 arrayListOfRequestObjects.get(selectedRequestIndex).setURL(URLTextFiled.getText());
             }
         });
@@ -533,6 +651,7 @@ public class Predigest {
         northPanelOfSecondPanel.add(requestMethodComboBox);
         northPanelOfSecondPanel.add(URLTextFiled);
         northPanelOfSecondPanel.add(sendButton);
+        someUnknownComponent.add(northPanelOfSecondPanel);
         secondPanel.add(northPanelOfSecondPanel,BorderLayout.NORTH);
         // second panel -> north]
         // second panel -> center[
@@ -555,7 +674,7 @@ public class Predigest {
         headerPanel=new JPanel();
         headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.Y_AXIS));
         headerPanel.setBackground(themeColor);
-        createHeaderComponent("New Key", "New Value");
+        createHeaderComponent();
         JPanel docs=new JPanel();
         someUnknownComponent.add(docs); // add 5
         docs.setBackground(themeColor);
@@ -573,9 +692,12 @@ public class Predigest {
                 JPopupMenu popupMenu = new JPopupMenu();
                 JMenuItem MultipartForm = new JMenuItem("Multipart Form");
                 MultipartForm.addActionListener(e->{
-                    System.out.println("yeeeeee");
+                    arrayListOfRequestObjects.get(selectedRequestIndex).setMassageBodyType("multipart form");
                 });
                 JMenuItem FormURLEncoded = new JMenuItem("Form URL Encoded");
+                MultipartForm.addActionListener(e->{
+                    arrayListOfRequestObjects.get(selectedRequestIndex).setMassageBodyType("urlencoded");
+                });
                 JMenuItem GraphQLQuery = new JMenuItem("GraphQL Query");
                 JMenuItem JSON = new JMenuItem("JSON");
                 JMenuItem XML = new JMenuItem("XML");
@@ -611,6 +733,9 @@ public class Predigest {
         //second panel]
     }
 
+    /**
+     * This method create third panel of the frame (the panel that is in the right side).
+     */
     private void createThirdPanel(){
         //third panel[
         thirdPanel.setBackground(Color.white);
@@ -627,7 +752,7 @@ public class Predigest {
         someUnknownComponent.add(northPanelOfThirdPanel);
         northPanelOfThirdPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
         northPanelOfThirdPanel.setBackground(themeColor);
-        detailLabelOfThirdPanel=new JLabel("0 null 0 ms 0 Byte");
+        detailLabelOfThirdPanel=new JLabel("0  0 ms 0 Byte");
         detailLabelOfThirdPanel.setFont(new Font("Serif", Font.ITALIC, 21));
         detailLabelOfThirdPanel.setForeground(new Color(0,100,0));
         northPanelOfThirdPanel.add(detailLabelOfThirdPanel);
@@ -643,6 +768,9 @@ public class Predigest {
         someUnknownComponent.add(raw);
         raw.setBackground(themeColor);
         JPanel rawItemPanel=new JPanel();
+        rawItemPanel.setLayout(new CardLayout());
+        JTextField textFieldBodeResponse=new JTextField();
+        textFieldBodeResponse.setEditable(false);
         JPanel aHeader=new JPanel();
         someUnknownComponent.add(aHeader); // add 8
         aHeader.setBackground(themeColor);
@@ -661,7 +789,24 @@ public class Predigest {
             if(tabbedPaneOfThirdPanel.getSelectedIndex()==1){
                 JPopupMenu popupMenu = new JPopupMenu();
                 JMenuItem rawItem = new JMenuItem("Raw");
+                rawItem.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent actionEvent) {
+                        textFieldBodeResponse.setText(arrayListOfRequestObjects.get(selectedRequestIndex).getResponseBody());
+                    }
+                });
                 JMenuItem previewItem=new JMenuItem("Preview");
+                previewItem.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent actionEvent) {
+                        if(arrayListOfRequestObjects.get(selectedRequestIndex).getHeaders().get("Content-Type").equals("image/png")){
+                            logic.saveResponseBody(arrayListOfRequestObjects.get(selectedRequestIndex),true,true);
+                        }
+                        else if(arrayListOfRequestObjects.get(selectedRequestIndex).getHeaders().get("Content-Type").equals("image/jpg")){
+                            logic.saveResponseBody(arrayListOfRequestObjects.get(selectedRequestIndex),true,true);
+                        }
+                    }
+                });
                 JMenuItem jsonItem = new JMenuItem("JSON");
                 popupMenu.add(rawItem); popupMenu.add(previewItem); popupMenu.add(jsonItem);
                 popupMenu.show(frame , 703, 180);
@@ -669,63 +814,22 @@ public class Predigest {
             }
             if(tabbedPaneOfThirdPanel.getSelectedIndex()==2){
                 JPanel centerHeader=new JPanel();
-                centerHeader.setLayout(new GridLayout(9,2));
+                centerHeader.setLayout(new CardLayout());
+                JLabel jLabel=new JLabel();
+                centerHeader.add(jLabel);
                 centerHeader.setBackground(themeColor);
                 someUnknownComponent.add(centerHeader);
-                centerHeader.add((new JLabel(" NAME")));
-                JLabel name=new JLabel(" null");
-                labelsOfHeaderInThirdPanel.add(name);
-                centerHeader.add(name);
-
-                centerHeader.add(new JLabel(" Server"));
-                JLabel server=new JLabel(" null");
-                labelsOfHeaderInThirdPanel.add(server);
-                centerHeader.add(server);
-
-                centerHeader.add(new JLabel(" Date"));
-                JLabel date=new JLabel(" null");
-                labelsOfHeaderInThirdPanel.add(date);
-                centerHeader.add(date);
-
-                centerHeader.add(new JLabel(" Content-Type"));
-                JLabel contentType=new JLabel(" null");
-                labelsOfHeaderInThirdPanel.add(contentType);
-                centerHeader.add(contentType);
-
-                centerHeader.add(new JLabel(" Content-Length"));
-                JLabel contentLength=new JLabel(" null");
-                labelsOfHeaderInThirdPanel.add(contentLength);
-                centerHeader.add(contentLength);
-
-                centerHeader.add(new JLabel(" Connection"));
-                JLabel connection=new JLabel(" null");
-                labelsOfHeaderInThirdPanel.add(connection);
-                centerHeader.add(connection);
-
-                centerHeader.add(new JLabel(" Last-Modified"));
-                JLabel lastModified=new JLabel(" null");
-                labelsOfHeaderInThirdPanel.add(lastModified);
-                centerHeader.add(lastModified);
-
-                centerHeader.add(new JLabel(" ETag"));
-                JLabel ETag=new JLabel(" null");
-                labelsOfHeaderInThirdPanel.add(ETag);
-                centerHeader.add(ETag);
-
-                centerHeader.add(new JLabel(" Accept-Ranges"));
-                JLabel acceptRanges=new JLabel(" null");
-                labelsOfHeaderInThirdPanel.add(acceptRanges);
-                centerHeader.add(acceptRanges);
-
-                finalAHeader.add(centerHeader, BorderLayout.CENTER);
-
+                centerHeader.add((new JLabel(" Name")));
+                centerHeader.add((new JLabel(" Value")));
+                if(arrayListOfRequestObjects.get(selectedRequestIndex).getResponseHeaders().size()!=0){
+                    for(String key:arrayListOfRequestObjects.get(selectedRequestIndex).getResponseHeaders().keySet()){
+                        centerHeader.add(new JLabel(" "+key+": "));
+                        centerHeader.add(new JLabel(arrayListOfRequestObjects.get(selectedRequestIndex).getResponseHeaders().get(key)));
+                    }
+                }
                 JButton copyButton=new JButton("Copy to clipboard");
                 copyButton.addActionListener(CBEvent->{
-                    StringSelection stringSelection=new StringSelection("Name: "+name.getText()+"\nServer: "+
-                            server.getText()+"\nDate: "+date.getText()+"\nContent-Type: "+contentType.getText()+
-                            "\nContent-Length: "+contentLength.getText()+"\nConnection: "+connection.getText()+
-                            "\nLast-Modified: "+lastModified.getText()+"\nETag: "+ETag.getText()+"\nAccept-Ranges: "+
-                            acceptRanges.getText());
+                    StringSelection stringSelection=new StringSelection(jLabel.getText());
                     Clipboard clipboard= Toolkit.getDefaultToolkit().getSystemClipboard();
                     clipboard.setContents(stringSelection,null);
                 });
@@ -753,6 +857,10 @@ public class Predigest {
         }
     }
 
+    /**
+     * This method save all requests in .src files.
+     * Also save all config of graphic.
+     */
     private void save() {
         // config
         try(FileWriter fileWriter=new FileWriter("save\\config.src")){
@@ -765,8 +873,8 @@ public class Predigest {
             System.out.println("saving process failed!"); //change to dialog massage
             e.printStackTrace();
         }
-        // other
-        try(ObjectOutputStream objectOutputStream=new ObjectOutputStream(new FileOutputStream("save\\hashMap.src"))){
+        // request
+        try(ObjectOutputStream objectOutputStream=new ObjectOutputStream(new FileOutputStream("save\\requests.src"))){
             objectOutputStream.writeObject(arrayListOfRequestObjects);
         } catch (FileNotFoundException e) {
             System.out.println("saving process failed. File not founded!"); //change to dialog massage
@@ -786,10 +894,18 @@ public class Predigest {
         return dir.listFiles((dir1, filename) -> filename.endsWith(".src"));
     }
 
+    /**
+     * This method get string (true/false) and return it boolean form.
+     * @param string is input string and just have to be "true" or "false"
+     * @return a boolean as answer
+     */
     private boolean stringToBoolean(String string){
         return string.equals("true");
     }
 
+    /**
+     * This method load config and requests.
+     */
     private void load(){
         // config
         try(FileReader fileReader=new FileReader("save\\config.src"); Scanner scanner=new Scanner(fileReader)) {
@@ -807,7 +923,7 @@ public class Predigest {
             e.printStackTrace();
         }
         // other
-        try(ObjectInputStream objectInputStream=new ObjectInputStream(new FileInputStream("save\\hashMap.src"))){
+        try(ObjectInputStream objectInputStream=new ObjectInputStream(new FileInputStream("save\\requests.src"))){
             arrayListOfRequestObjects=(ArrayList<Request>) objectInputStream.readObject();
         } catch (ClassNotFoundException e){
             System.out.println("loading process failed. Class not founded!"); //change to dialog massage
@@ -821,7 +937,7 @@ public class Predigest {
         }
         for(Request request:arrayListOfRequestObjects){
             demoList.addElement(request.getRequestMethod()+" "+request.getName());
-            System.out.println(request.getRequestMethod()+" "+request.getName());
+            System.out.println(request.getRequestMethod()+" "+request.getName()); //test.................................
         }
     }
 
@@ -833,7 +949,18 @@ public class Predigest {
     }
 }
 
-class PTextField extends JTextField implements Serializable {
+/**
+ * This class extend "JTextField" class.
+ * Constructor of this class get a string as prompt text.
+ * @author Sayed Mohammad Ali Mirkazemi
+ * @version 1.0.0
+ * @since 6/10/2020
+ */
+class PTextField extends JTextField {
+    /**
+     * This is constructor of this class and get prompt text and set a focusListener to it.
+     * @param promptText is a string as prompt text
+     */
     public PTextField(final String promptText) {
         super(promptText);
         addFocusListener(new FocusListener() {
