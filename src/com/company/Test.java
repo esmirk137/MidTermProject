@@ -37,6 +37,7 @@ public class Test {
 
          */
 
+        /*
         JFrame frame=new JFrame();
         JPanel panel=new JPanel();
         panel.setLayout(new FlowLayout());
@@ -52,6 +53,9 @@ public class Test {
         frame.add(panel);
         frame.setVisible(true);
 
+
+         */
+        System.out.println(Integer.parseInt("1"));
     }
 
 
